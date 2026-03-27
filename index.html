@@ -987,7 +987,9 @@
         ).join('');
 
         document.getElementById('accMemberGrid').innerHTML = (db.members || []).map((m, i) =>
-            `<div class="member-card ${selectedAccMembers.has(i) ? 'selected' : ''}" onclick="toggleAccMember(${i})">${escapeHtml(m.ic || '')}</div>`
+            `<div class="member-card ${selectedAccMembers.has(i) ? 'selected' : ''}" onclick="toggleAccMember(${i})">
+                ${escapeHtml(m.nick || m.ic || '')}
+            </div>`
         ).join('');
 
         const fill = (id, list, v, t) => {
