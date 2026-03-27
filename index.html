@@ -871,7 +871,9 @@ h1.logo-graffiti[style*="font-size:100px"] {
         <div class="dashboard-card" style="max-width:400px;">
             <select id="selAccType"></select>
             <input type="number" id="inAccQty" value="1" min="1">
-            <button class="btn-primary" style="width:100%" onclick="finalizeAccounting()">Rögzítés</button>
+            <button class="btn-primary" style="width:100%" onclick="addToCart()">Kosárhoz adás</button>
+            <button class="btn-danger" style="width:100%; margin-top:5px;" onclick="finalizeCart()">Összes rögzítése</button>
+            <div id="accCartList" style="margin-top:15px;"></div>
         </div>
 
         <h3>Könyvelési Napló</h3>
@@ -1013,7 +1015,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
     let db = getDefaultDb();
     let currentTrType = null;
-    let selectedAccMembers = new Set();
+    db.accCart
     let isSyncReady = false;
     let lastRenderedBalance = 0;
 
@@ -1032,7 +1034,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
                 acc: []
             },
             contacts: [],
-            blacklist: []
+            blacklist: [],
+            accCart: []
         };
     }
 
@@ -1624,6 +1627,7 @@ function flashBalanceDirection(isUp) {
                 <td><button class="btn-danger" onclick="deleteBL(${i})">X</button></td>
             </tr>`
         ).join('');
+        renderCart();
     }
 
     function showTab(id) {
@@ -1710,7 +1714,8 @@ function flashBalanceDirection(isUp) {
                     acc: Array.isArray(data.logs?.acc) ? data.logs.acc : []
                 },
                 contacts: Array.isArray(data.contacts) ? data.contacts : [],
-                blacklist: Array.isArray(data.blacklist) ? data.blacklist : []
+                blacklist: Array.isArray(data.blacklist) ? data.blacklist : [],
+                accCart: Array.isArray(data.accCart) ? data.accCart : []
             };
         } else {
             db = getDefaultDb();
@@ -1840,6 +1845,190 @@ function flashBalanceDirection(isUp) {
         } catch (e) {
             console.warn("Hang lejátszása nem sikerült:", e);
         }
+    }
+
+    function addToCart() {
+        const sel = document.getElementById('selAccType');
+        const price = parseInt(sel.value);
+        const qty = parseInt(document.getElementById('inAccQty').value);
+
+        if (isNaN(price) || isNaN(qty) || qty <= 0) {
+        return customAlert("Adj meg érvényes adatokat!");
+        }
+
+        accCart.push({
+            name: sel.options[sel.selectedIndex].text,
+            price,
+            qty
+        });
+
+        renderCart();
+    }
+
+    function renderCart() {
+        const el = document.getElementById('accCartList');
+
+        if (!accCart.length) {
+            el.innerHTML = "<p>Nincs tétel a kosárban</p>";
+            return;
+        }
+
+        el.innerHTML = accCart.map((item, i) => `
+            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                <span>${item.name} x${item.qty}</span>
+                <button onclick="removeFromCart(${i})">X</button>
+            </div>
+        `).join('');
+    }
+
+    function removeFromCart(i) {
+        accCart.splice(i, 1);
+        renderCart();
+    }
+
+    function finalizeCart() {
+        if (!accCart.length) {
+            return customAlert("A kosár üres!");
+        }
+    
+        if (selectedAccMembers.size === 0) {
+            return customAlert("Válassz tagokat!");
+        }
+    
+        let total = 0;
+    
+        accCart.forEach(item => {
+            total += item.price * item.qty;
+        });
+    
+        db.balance += total;
+    
+        const share = Math.floor((total * 0.4) / selectedAccMembers.size);
+    
+        selectedAccMembers.forEach(idx => {
+            db.members[idx].pay += share;
+            db.members[idx].payDate = Date.now();
+            db.members[idx].isDone = false;
+        });
+    
+        db.logs.acc.push({
+            time: new Date().toLocaleTimeString(),
+            type: "Kosár (" + accCart.length + " tétel)",
+            total,
+            share
+        });
+    
+        db.logs.cash.push({
+            time: new Date().toLocaleTimeString(),
+            event: 'Könyvelés (kosár)',
+            val: total,
+            bal: db.balance
+        });
+    
+        accCart = [];
+        selectedAccMembers.clear();
+    
+        renderCart();
+        save();
+    }
+
+    function addToCart() {
+        const sel = document.getElementById('selAccType');
+        const price = parseInt(sel.value, 10);
+        const qty = parseInt(document.getElementById('inAccQty').value, 10);
+    
+        if (isNaN(price) || isNaN(qty) || qty <= 0) {
+            return customAlert("Adj meg érvényes adatokat!");
+        }
+    
+        if (!Array.isArray(db.accCart)) db.accCart = [];
+    
+        db.accCart.push({
+            name: sel.options[sel.selectedIndex].text,
+            price,
+            qty
+        });
+    
+        document.getElementById('inAccQty').value = 1;
+        save();
+    }
+
+    function removeFromCart(i) {
+        if (!Array.isArray(db.accCart)) db.accCart = [];
+        db.accCart.splice(i, 1);
+        save();
+    }
+
+    function renderCart() {
+        const el = document.getElementById('accCartList');
+        if (!el) return;
+    
+        if (!Array.isArray(db.accCart)) db.accCart = [];
+    
+        if (!db.accCart.length) {
+            el.innerHTML = "<p class='muted'>Nincs tétel a kosárban</p>";
+            return;
+        }
+    
+        const total = db.accCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    
+        el.innerHTML = `
+            <div style="margin-bottom:10px;">
+                ${db.accCart.map((item, i) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; padding:8px; background:#0c0c0c; border:1px solid #222; border-radius:8px;">
+                        <span>${escapeHtml(item.name)} × ${item.qty} = ${(item.price * item.qty).toLocaleString()} Cs</span>
+                        <button onclick="removeFromCart(${i})">X</button>
+                    </div>
+                `).join('')}
+            </div>
+            <div style="font-weight:bold; color: var(--primary-blue);">
+                Kosár összesen: ${total.toLocaleString()} Cs
+            </div>
+        `;
+    }
+
+    function finalizeCart() {
+        if (!Array.isArray(db.accCart) || db.accCart.length === 0) {
+            return customAlert("A kosár üres!");
+        }
+    
+        if (selectedAccMembers.size === 0) {
+            return customAlert("Válassz tagokat!");
+        }
+    
+        const total = db.accCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+        const share = Math.floor((total * 0.4) / selectedAccMembers.size);
+        const peps = Array.from(selectedAccMembers).map(idx => db.members[idx]?.nick || db.members[idx]?.ic).filter(Boolean);
+    
+        db.balance += total;
+    
+        selectedAccMembers.forEach(idx => {
+            if (!db.members[idx]) return;
+            db.members[idx].pay = (db.members[idx].pay || 0) + share;
+            db.members[idx].payDate = Date.now();
+            db.members[idx].isDone = false;
+            db.members[idx].reqPay = null;
+        });
+    
+        db.logs.acc.push({
+            time: nowString(),
+            type: "Kosár (" + db.accCart.length + " tétel)",
+            total,
+            peps: peps.join(', '),
+            share
+        });
+    
+        db.logs.cash.push({
+            time: nowString(),
+            event: "Könyvelés (kosár)",
+            note: db.accCart.map(item => `${item.name} x${item.qty}`).join(', '),
+            val: total,
+            bal: db.balance
+        });
+    
+        db.accCart = [];
+        selectedAccMembers.clear();
+        save();
     }
     
 </script>
