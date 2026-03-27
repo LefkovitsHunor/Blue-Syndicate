@@ -652,6 +652,132 @@ h1.logo-graffiti[style*="font-size:100px"] {
         font-size: inherit !important;
     }
 }
+
+    /* =========================
+   DESKTOP VISSZAÁLLÍTÁS
+   ========================= */
+@media (min-width: 641px) {
+    .main-content {
+        max-width: 1600px !important;
+        margin: 30px auto !important;
+        padding: 0 20px !important;
+        width: auto !important;
+    }
+
+    header {
+        background: var(--nav-bg);
+        padding: 15px 40px !important;
+        border-bottom: 2px solid var(--primary-blue);
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        flex-direction: row !important;
+        gap: 0 !important;
+    }
+
+    .logo-graffiti {
+        font-size: 32px !important;
+        text-align: left !important;
+    }
+
+    nav {
+        display: flex !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+        width: auto !important;
+        grid-template-columns: none !important;
+    }
+
+    nav button {
+        width: auto !important;
+        padding: 10px 20px !important;
+        font-size: inherit !important;
+        min-height: unset !important;
+    }
+
+    .tab-content {
+        padding: 30px !important;
+        border-radius: 15px !important;
+    }
+
+    .dashboard-grid {
+        display: grid !important;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+        gap: 20px !important;
+    }
+
+    .dashboard-card {
+        padding: 18px !important;
+    }
+
+    .trade-toggle-group {
+        display: flex !important;
+        flex-direction: row !important;
+        gap: 10px !important;
+    }
+
+    .trade-toggle-group button {
+        width: auto !important;
+        flex: 1 !important;
+    }
+
+    #accMemberGrid {
+        display: block !important;
+    }
+
+    .member-card {
+        display: inline-block !important;
+        width: auto !important;
+        min-width: 130px !important;
+        margin: 5px !important;
+        padding: 12px !important;
+        font-size: 14px !important;
+    }
+
+    #phGroups {
+        display: block !important;
+    }
+
+    .modal-content {
+        width: 450px !important;
+        max-height: none !important;
+        overflow-y: visible !important;
+        padding: 30px !important;
+    }
+
+    table {
+        display: table !important;
+        width: 100% !important;
+        overflow-x: visible !important;
+    }
+
+    th, td {
+        white-space: normal !important;
+        padding: 12px !important;
+        font-size: 14px !important;
+    }
+
+    #totalBal {
+        font-size: 4em !important;
+        line-height: normal !important;
+        word-break: normal !important;
+    }
+
+    .main-title {
+        text-align: center !important;
+        font-size: 100px !important;
+        margin-top: 100px !important;
+    }
+
+    .section-head {
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        gap: 0 !important;
+        margin-bottom: 20px !important;
+        flex-wrap: nowrap !important;
+    }
+}
         
     </style>
 </head>
