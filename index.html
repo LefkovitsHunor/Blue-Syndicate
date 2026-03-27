@@ -1440,6 +1440,7 @@ function flashBalanceDirection(isUp) {
     }
     
     function render() {
+        console.log("RENDER DB =", JSON.parse(JSON.stringify(db)));
         const currentBalance = Number(db.balance || 0);
     
         const totalBalEl = document.getElementById('totalBal');
