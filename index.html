@@ -1015,7 +1015,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
     let db = getDefaultDb();
     let currentTrType = null;
-    db.accCart
+    let selectedAccMembers = new Set();
     let isSyncReady = false;
     let lastRenderedBalance = 0;
 
@@ -1846,90 +1846,6 @@ function flashBalanceDirection(isUp) {
         }
     }
 
-    function addToCart() {
-        const sel = document.getElementById('selAccType');
-        const price = parseInt(sel.value);
-        const qty = parseInt(document.getElementById('inAccQty').value);
-
-        if (isNaN(price) || isNaN(qty) || qty <= 0) {
-        return customAlert("Adj meg érvényes adatokat!");
-        }
-
-        accCart.push({
-            name: sel.options[sel.selectedIndex].text,
-            price,
-            qty
-        });
-
-        renderCart();
-    }
-
-    function renderCart() {
-        const el = document.getElementById('accCartList');
-
-        if (!accCart.length) {
-            el.innerHTML = "<p>Nincs tétel a kosárban</p>";
-            return;
-        }
-
-        el.innerHTML = accCart.map((item, i) => `
-            <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                <span>${item.name} x${item.qty}</span>
-                <button onclick="removeFromCart(${i})">X</button>
-            </div>
-        `).join('');
-        renderCart();
-    }
-
-    function removeFromCart(i) {
-        accCart.splice(i, 1);
-        
-    }
-
-    function finalizeCart() {
-        if (!accCart.length) {
-            return customAlert("A kosár üres!");
-        }
-    
-        if (selectedAccMembers.size === 0) {
-            return customAlert("Válassz tagokat!");
-        }
-    
-        let total = 0;
-    
-        accCart.forEach(item => {
-            total += item.price * item.qty;
-        });
-    
-        db.balance += total;
-    
-        const share = Math.floor((total * 0.4) / selectedAccMembers.size);
-    
-        selectedAccMembers.forEach(idx => {
-            db.members[idx].pay += share;
-            db.members[idx].payDate = Date.now();
-            db.members[idx].isDone = false;
-        });
-    
-        db.logs.acc.push({
-            time: new Date().toLocaleTimeString(),
-            type: "Kosár (" + accCart.length + " tétel)",
-            total,
-            share
-        });
-    
-        db.logs.cash.push({
-            time: new Date().toLocaleTimeString(),
-            event: 'Könyvelés (kosár)',
-            val: total,
-            bal: db.balance
-        });
-    
-        accCart = [];
-        selectedAccMembers.clear();
-    
-        renderCart();
-        save();
     }
 
     function addToCart() {
