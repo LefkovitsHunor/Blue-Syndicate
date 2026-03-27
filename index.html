@@ -631,12 +631,21 @@
     }
 
     function save() {
-        if (!isSyncReady) return;
-        DB_DOC.set(db)
-            .catch((err) => {
-                console.error("Mentési hiba:", err);
-                customAlert("Nem sikerült menteni az adatokat.");
-            });
+    if (!isSyncReady) {
+        console.log("Még nincs kész a szinkron.");
+        return;
+    }
+
+    console.log("MENTÉS INDUL", JSON.parse(JSON.stringify(db)));
+
+    DB_DOC.set(db)
+        .then(() => {
+            console.log("MENTÉS SIKERES");
+        })
+        .catch((err) => {
+            console.error("MENTÉSI HIBA:", err);
+            customAlert("Nem sikerült menteni az adatokat: " + err.message);
+        });
     }
 
     function closeModal() {
