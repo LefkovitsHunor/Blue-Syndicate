@@ -253,6 +253,18 @@
             animation: glowPulse 3s infinite ease-in-out;
         }
 
+        .balance-up {
+        color: var(--neon-green) !important;
+        text-shadow: 0 0 25px rgba(57, 255, 20, 0.9) !important;
+        transition: color 0.2s ease, text-shadow 0.2s ease;
+        }
+
+        .balance-down {
+        color: var(--neon-red) !important;
+        text-shadow: 0 0 25px rgba(255, 49, 49, 0.9) !important;
+        transition: color 0.2s ease, text-shadow 0.2s ease;
+        }
+        
         @keyframes glowPulse {
             0%, 100% {
                 text-shadow: 0 0 15px rgba(55, 149, 255, 0.4);
@@ -371,6 +383,19 @@
                 font-size: 2.4em;
             }
         }
+
+        .balance-up {
+            color: var(--neon-green) !important;
+            text-shadow: 0 0 25px rgba(57, 255, 20, 0.9) !important;
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+        }
+
+        .balance-down {
+            color: var(--neon-red) !important;
+            text-shadow: 0 0 25px rgba(255, 49, 49, 0.9) !important;
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+        }
+        
     </style>
 </head>
 <body>
@@ -607,6 +632,7 @@
     let currentTrType = null;
     let selectedAccMembers = new Set();
     let isSyncReady = false;
+    let lastRenderedBalance = 0;
 
     function getDefaultDb() {
         return {
@@ -955,10 +981,105 @@
         save();
     }
 
+    function animateBalanceNumber(element, start, end, duration = 700) {
+    const startTime = performance.now();
+
+    function update(currentTime) {
+        const progress = Math.min((currentTime - startTime) / duration, 1);
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const value = Math.floor(start + (end - start) * ease);
+
+        element.innerText = value.toLocaleString() + " Cs";
+
+        if (progress < 1) {
+            requestAnimationFrame(update);
+        } else {
+            element.innerText = end.toLocaleString() + " Cs";
+        }
+    }
+
+    requestAnimationFrame(update);
+}
+
+function flashBalanceDirection(isUp) {
+    const totalBalEl = document.getElementById('totalBal');
+    const statBalEl = document.getElementById('statBalance');
+
+    const addClass = isUp ? 'balance-up' : 'balance-down';
+    const removeClass = isUp ? 'balance-down' : 'balance-up';
+
+    [totalBalEl, statBalEl].forEach(el => {
+        if (!el) return;
+
+        el.classList.remove(removeClass);
+        el.classList.remove(addClass);
+        void el.offsetWidth;
+        el.classList.add(addClass);
+
+        setTimeout(() => {
+            el.classList.remove(addClass);
+        }, 700);
+    });
+}
+
+    function playBalanceSound(isUp) {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+    
+            const ctx = new AudioContextClass();
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+    
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(isUp ? 880 : 220, ctx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(isUp ? 1320 : 140, ctx.currentTime + 0.12);
+    
+            gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+    
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+    
+            oscillator.start(ctx.currentTime);
+            oscillator.stop(ctx.currentTime + 0.18);
+    
+            setTimeout(() => {
+                if (ctx && typeof ctx.close === "function") ctx.close();
+            }, 250);
+        } catch (e) {
+            console.warn("Hang lejátszása nem sikerült:", e);
+        }
+    }
+    
     function render() {
-        document.getElementById('totalBal').innerText = (db.balance || 0).toLocaleString() + " Cs";
+        const currentBalance = Number(db.balance || 0);
+    
+        const totalBalEl = document.getElementById('totalBal');
+        const statBalEl = document.getElementById('statBalance');
+    
+        if (totalBalEl && statBalEl) {
+            if (lastRenderedBalance === 0 && currentBalance === 0) {
+                totalBalEl.innerText = currentBalance.toLocaleString() + " Cs";
+                statBalEl.innerText = currentBalance.toLocaleString() + " Cs";
+            } else if (lastRenderedBalance === currentBalance) {
+                totalBalEl.innerText = currentBalance.toLocaleString() + " Cs";
+                statBalEl.innerText = currentBalance.toLocaleString() + " Cs";
+            } else {
+                const isUp = currentBalance > lastRenderedBalance;
+    
+                animateBalanceNumber(totalBalEl, lastRenderedBalance, currentBalance, 700);
+                animateBalanceNumber(statBalEl, lastRenderedBalance, currentBalance, 700);
+    
+                flashBalanceDirection(isUp);
+                playBalanceSound(isUp);
+            }
+        }
+    
+        lastRenderedBalance = currentBalance;
+        
         document.getElementById('statMembers').innerText = (db.members || []).length;
-        document.getElementById('statBalance').innerText = (db.balance || 0).toLocaleString() + " Cs";
 
         document.querySelector('#tabTrade tbody').innerHTML = (db.config.tradeItems || []).map((v, i) =>
             `<tr><td>${escapeHtml(v)}</td><td><button onclick="removeTradeItem(${i})">X</button></td></tr>`
@@ -1286,6 +1407,58 @@
             }
         });
     };
+
+    function flashBalanceDirection(isUp) {
+    const totalBalEl = document.getElementById('totalBal');
+    const statBalEl = document.getElementById('statBalance');
+
+    const addClass = isUp ? 'balance-up' : 'balance-down';
+    const removeClass = isUp ? 'balance-down' : 'balance-up';
+
+    [totalBalEl, statBalEl].forEach(el => {
+        if (!el) return;
+        el.classList.remove(removeClass);
+        el.classList.remove(addClass);
+        void el.offsetWidth;
+        el.classList.add(addClass);
+
+        setTimeout(() => {
+            el.classList.remove(addClass);
+        }, 700);
+    });
+}
+
+    function playBalanceSound(isUp) {
+        try {
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) return;
+    
+            const ctx = new AudioContextClass();
+            const oscillator = ctx.createOscillator();
+            const gainNode = ctx.createGain();
+    
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(isUp ? 880 : 220, ctx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(isUp ? 1320 : 140, ctx.currentTime + 0.12);
+    
+            gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.01);
+            gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
+    
+            oscillator.connect(gainNode);
+            gainNode.connect(ctx.destination);
+    
+            oscillator.start(ctx.currentTime);
+            oscillator.stop(ctx.currentTime + 0.18);
+    
+            setTimeout(() => {
+                if (ctx && typeof ctx.close === "function") ctx.close();
+            }, 250);
+        } catch (e) {
+            console.warn("Hang lejátszása nem sikerült:", e);
+        }
+    }
+    
 </script>
 </body>
 </html>
