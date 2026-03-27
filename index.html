@@ -395,6 +395,234 @@
             text-shadow: 0 0 25px rgba(255, 49, 49, 0.9) !important;
             transition: color 0.2s ease, text-shadow 0.2s ease;
         }
+
+        /* =========================
+   MOBILBARÁT JAVÍTÁSOK
+   ========================= */
+
+html, body {
+    max-width: 100%;
+    overflow-x: hidden;
+    -webkit-text-size-adjust: 100%;
+}
+
+button, input, select, textarea {
+    font-size: 16px; /* iPhone zoom bug ellen */
+}
+
+table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+th, td {
+    white-space: nowrap;
+}
+
+.modal-content {
+    width: min(95vw, 450px);
+    max-height: 90vh;
+    overflow-y: auto;
+}
+
+.main-content {
+    width: 100%;
+    padding: 0 12px;
+    margin: 15px auto;
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+}
+
+.trade-toggle-group {
+    flex-direction: column;
+}
+
+.trade-toggle-group button {
+    width: 100%;
+}
+
+#accMemberGrid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.member-card {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 12px 8px;
+    font-size: 14px;
+}
+
+#phGroups {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+}
+
+header {
+    padding: 10px 12px;
+}
+
+.logo-graffiti {
+    font-size: 24px;
+    text-align: center;
+}
+
+nav {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+}
+
+nav button {
+    width: 100%;
+    padding: 12px 8px;
+    font-size: 13px;
+}
+
+.tab-content {
+    padding: 16px;
+    border-radius: 12px;
+}
+
+.dashboard-card {
+    padding: 14px;
+}
+
+#totalBal {
+    font-size: 2.2em;
+    line-height: 1.1;
+    word-break: break-word;
+}
+
+h1.logo-graffiti[style*="font-size:100px"] {
+    font-size: 48px !important;
+    margin-top: 40px !important;
+}
+
+@media (max-width: 900px) {
+    header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    nav {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .main-content {
+        padding: 0 10px;
+    }
+
+    table {
+        font-size: 13px;
+    }
+
+    th, td {
+        padding: 10px 8px;
+    }
+}
+
+@media (max-width: 640px) {
+    nav {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    #accMemberGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .tab-content h2 {
+        font-size: 22px;
+        margin-top: 0;
+    }
+
+    .dashboard-card h3 {
+        font-size: 16px;
+    }
+
+    input, select, textarea, button {
+        min-height: 44px;
+    }
+
+    .modal-content {
+        padding: 18px;
+        border-radius: 12px;
+    }
+}
+
+    @media (max-width: 480px) {
+        nav {
+            grid-template-columns: 1fr;
+        }
+    
+        #accMemberGrid {
+            grid-template-columns: 1fr;
+        }
+    
+        .main-content {
+            padding: 0 8px;
+        }
+    
+        .tab-content {
+            padding: 12px;
+        }
+    
+        .dashboard-card {
+            padding: 12px;
+        }
+    
+        #totalBal {
+            font-size: 1.8em;
+        }
+    
+        th, td {
+            padding: 8px 6px;
+            font-size: 12px;
+        }
+    
+        .logo-graffiti {
+            font-size: 20px;
+        }
+    }
+
+    .main-title {
+        text-align: center;
+        font-size: clamp(38px, 10vw, 100px);
+        margin-top: clamp(30px, 8vw, 100px);
+    }
+
+    .section-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+
+    .section-head > * {
+        min-width: 0;
+    }
+
+    @media (max-width: 640px) {
+        .dashboard-card[style*="max-width:400px"],
+        .dashboard-card[style*="max-width:500px"] {
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+        }
+    }
         
     </style>
 </head>
@@ -411,7 +639,7 @@
 
 <div class="main-content" id="mainWrapper" style="display:none;">
     <div id="főoldal" class="tab-content active">
-        <h1 class="logo-graffiti" style="text-align:center; font-size:100px; margin-top:100px;">Blue Syndicate</h1>
+        <h1 class="logo-graffiti main-title">Blue Syndicate</h1>
     </div>
 
     <div id="dashboard" class="tab-content">
@@ -461,7 +689,7 @@
     </div>
 
     <div id="taglista" class="tab-content">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+        <div class="section-head">
             <h2>Taglista</h2>
             <button class="btn-primary" onclick="openMemberModal()">+ Új Tag Felvétele</button>
         </div>
