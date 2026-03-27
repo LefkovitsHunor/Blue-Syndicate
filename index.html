@@ -644,18 +644,55 @@
     function logout() { localStorage.removeItem('synd_auth'); location.reload(); }
 
     window.onload = () => {
-        document.getElementById('mainNav').innerHTML = MENU.map(m => `<button onclick="showTab('${m}')" id="btn-${m}">${m.toUpperCase()}</button>`).join('') + `<button onclick="logout()">LOGOUT</button>`;
-        if(!localStorage.getItem('synd_auth')) {
-            showModal(`<h2>Syndicate Access</h2><input id="lU" placeholder="User"><input type="password" id="lP" placeholder="Password"><button class="btn-primary" style="width:100%" onclick="L()">Login</button>`);
-            window.L = () => { if(ROLES[document.getElementById('lU').value] === document.getElementById('lP').value) { localStorage.setItem('synd_auth', '1'); closeModal(); location.reload(); } else customAlert("Hibás!"); };
-        } else {
+    // 1. Menü generálása (mint eddig)
+    document.getElementById('mainNav').innerHTML = MENU.map(m => 
+        `<button onclick="showTab('${m}')" id="btn-${m}">${m.toUpperCase()}</button>`
+    ).join('') + `<button onclick="logout()">LOGOUT</button>`;
+
+    // 2. Firebase figyelő: Megnézi, be van-e jelentkezve valaki
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            // BE VAN JELENTKEZVE
             document.getElementById('siteHeader').style.display = 'flex';
             document.getElementById('mainWrapper').style.display = 'block';
-            autoCleanup(); // Itt fut le a tagonkénti ellenőrzés
+            
+            // Itt adjuk oda a jogokat az email alapján
+            handleLoginPermissions(user.email); 
+            
+            autoCleanup();
             render();
-            render();
+        } else {
+            // NINCS BEJELENTKEZVE -> Modal mutatása
+            showModal(`
+                <h2>Syndicate Access</h2>
+                <input id="lU" placeholder="Email cím">
+                <input type="password" id="lP" placeholder="Jelszó">
+                <button class="btn-primary" style="width:100%" onclick="L()">Login</button>
+            `);
+
+            // A bejelentkezési logika Firebase-szel
+            window.L = () => {
+                const email = document.getElementById('lU').value;
+                const pass = document.getElementById('lP').value;
+
+                auth.signInWithEmailAndPassword(email, pass)
+                    .then(() => {
+                        closeModal(); // Siker esetén a onAuthStateChanged elintézi a többit
+                    })
+                    .catch((error) => {
+                        alert("Hiba: " + error.message);
+                    });
+            };
         }
-    };
+    });
+};
+
+// Kijelentkezés függvény
+window.logout = () => {
+    auth.signOut().then(() => {
+        location.reload();
+    });
+};
 
     //Automatikus törlés
     function autoCleanup() {
@@ -698,6 +735,21 @@
         location.reload(); // Újratölti az oldalt, hogy tiszta legyen minden
     }
 </script>
+
+    <div id="main-app" style="display: none;">
+    <nav style="background: #111; padding: 15px; border-bottom: 2px solid #005eff; display: flex; gap: 10px; justify-content: center;">
+        <button onclick="showTab('dashboard')">Főoldal</button>
+        <button onclick="showTab('konyveles')">Könyvelés</button>
+        <button onclick="showTab('raktar')">Raktár</button>
+        <button onclick="showTab('fizetes')">Fizetés</button>
+    </nav>
+
+    <div id="dashboard" class="tab-content" style="padding: 20px; color: white;"><h1>Irányítópult</h1></div>
+    <div id="konyveles" class="tab-content" style="display:none; padding: 20px; color: white;"><h1>Könyvelés</h1></div>
+    <div id="raktar" class="tab-content" style="display:none; padding: 20px; color: white;"><h1>Raktárkészlet</h1></div>
+    <div id="fizetes" class="tab-content" style="display:none; padding: 20px; color: white;"><h1>Kifizetések</h1></div>
+</div>
+
 <div id="resetModal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;">
     <div style="background: #111; border: 2px solid #ff3131; padding: 30px; border-radius: 10px; text-align: center; max-width: 400px;">
         <h2 style="color: #ff3131;">ADATTÖRLÉS</h2>
@@ -708,5 +760,49 @@
         </div>
     </div>
 </div>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+
+
+
+<script>
+    // 2. A TE EGYEDI KULCSAID (Ezt másold ki a Firebase-ből!)
+    const firebaseConfig = {
+        apiKey: "AIzaSyCbNX5_JbOcQ4F-QKTmiNR6qp7_9m_HQEE",
+        authDomain: "blue-syndicate.firebaseapp.com",
+        projectId: "blue-syndicate",
+        storageBucket: "blue-syndicate.firebasestorage.app",
+        messagingSenderId: "660554152192",
+        appId: "1:660554152192:web:71dd410897c4a914271be5",
+        measurementId: "G-EXX7WELQDS"
+    };
+
+    // 3. RENDSZER INDÍTÁSA
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    // 4. A BEJELENTKEZŐ FÜGGVÉNYED ÁTÍRÁSA
+    function loginProcess() {
+        const email = document.getElementById('lefkovitshunor@gmail.com').value; // Itt az emailt írják be
+        const password = document.getElementById('Thehunor3').value;
+
+        auth.signInWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+                // SIKER! Megnézzük a rangot az email alapján (mint korábban)
+                handleLoginPermissions(userCredential.user.email);
+            })
+            .catch((error) => {
+                // HIBA! (Rossz jelszó vagy nem létező email)
+                alert("Hiba: " + error.message);
+            });
+    }
+
+    // A korábbi jogosultságkezelő függvényed jöhet ide...
+    function handleLoginPermissions(email) {
+        // ... itt dől el, hogy ADMIN, KONYVELO vagy TAG ...
+        console.log("Belépve mint: " + email);
+        // showTab('dashboard'); stb.
+    }
+</script>
 </body>
 </html>
