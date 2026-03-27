@@ -1694,12 +1694,11 @@ function flashBalanceDirection(isUp) {
 
     function setupRealtimeSync() {
     DB_DOC.onSnapshot((docSnap) => {
-        console.log("SNAPSHOT ÉRKEZETT", docSnap.exists, docSnap.data());
-
         isSyncReady = true;
 
         if (docSnap.exists) {
             const data = docSnap.data() || {};
+
             db = {
                 members: Array.isArray(data.members) ? data.members : [],
                 balance: Number(data.balance || 0),
@@ -1719,14 +1718,13 @@ function flashBalanceDirection(isUp) {
             };
         } else {
             db = getDefaultDb();
-            DB_DOC.set(db);
         }
 
         autoCleanup();
         render();
     }, (error) => {
         console.error("Realtime sync hiba:", error);
-        customAlert("Nem sikerült az élő adatkapcsolat: " + error.message);
+        customAlert("Nem sikerült az élő adatkapcsolat.");
     });
 }
 
@@ -1879,6 +1877,7 @@ function flashBalanceDirection(isUp) {
                 <button onclick="removeFromCart(${i})">X</button>
             </div>
         `).join('');
+        renderCart();
     }
 
     function removeFromCart(i) {
@@ -1960,32 +1959,43 @@ function flashBalanceDirection(isUp) {
     }
 
     function renderCart() {
-        const el = document.getElementById('accCartList');
-        if (!el) return;
-    
-        if (!Array.isArray(db.accCart)) db.accCart = [];
-    
-        if (!db.accCart.length) {
-            el.innerHTML = "<p class='muted'>Nincs tétel a kosárban</p>";
-            return;
-        }
-    
-        const total = db.accCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-    
-        el.innerHTML = `
-            <div style="margin-bottom:10px;">
-                ${db.accCart.map((item, i) => `
-                    <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; padding:8px; background:#0c0c0c; border:1px solid #222; border-radius:8px;">
-                        <span>${escapeHtml(item.name)} × ${item.qty} = ${(item.price * item.qty).toLocaleString()} Cs</span>
-                        <button onclick="removeFromCart(${i})">X</button>
-                    </div>
-                `).join('')}
-            </div>
-            <div style="font-weight:bold; color: var(--primary-blue);">
-                Kosár összesen: ${total.toLocaleString()} Cs
+    const el = document.getElementById('accCartList');
+    if (!el) return;
+
+    if (!db.accCart || !Array.isArray(db.accCart)) {
+        db.accCart = [];
+    }
+
+    if (db.accCart.length === 0) {
+        el.innerHTML = "<p class='muted'>Nincs tétel a kosárban</p>";
+        return;
+    }
+
+    let html = "";
+    let total = 0;
+
+    db.accCart.forEach((item, i) => {
+        const name = item.name || "";
+        const price = Number(item.price || 0);
+        const qty = Number(item.qty || 0);
+        const rowTotal = price * qty;
+        total += rowTotal;
+
+        html += `
+            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; padding:8px; background:#0c0c0c; border:1px solid #222; border-radius:8px;">
+                <span>${escapeHtml(name)} × ${qty} = ${rowTotal.toLocaleString()} Cs</span>
+                <button onclick="removeFromCart(${i})">X</button>
             </div>
         `;
-    }
+    });
+
+    el.innerHTML = `
+        <div style="margin-bottom:10px;">${html}</div>
+        <div style="font-weight:bold; color: var(--primary-blue);">
+            Kosár összesen: ${total.toLocaleString()} Cs
+        </div>
+    `;
+}
 
     function finalizeCart() {
         if (!Array.isArray(db.accCart) || db.accCart.length === 0) {
