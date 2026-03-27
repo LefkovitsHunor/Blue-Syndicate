@@ -1179,39 +1179,41 @@
     }
 
     function setupRealtimeSync() {
-        DB_DOC.onSnapshot((docSnap) => {
-            isSyncReady = true;
+    DB_DOC.onSnapshot((docSnap) => {
+        console.log("SNAPSHOT ÉRKEZETT", docSnap.exists, docSnap.data());
 
-            if (docSnap.exists) {
-                const data = docSnap.data() || {};
-                db = {
-                    members: Array.isArray(data.members) ? data.members : [],
-                    balance: Number(data.balance || 0),
-                    config: {
-                        tradeItems: Array.isArray(data.config?.tradeItems) ? data.config.tradeItems : [],
-                        fractions: Array.isArray(data.config?.fractions) ? data.config.fractions : [],
-                        accTypes: Array.isArray(data.config?.accTypes) ? data.config.accTypes : []
-                    },
-                    logs: {
-                        trade: Array.isArray(data.logs?.trade) ? data.logs.trade : [],
-                        cash: Array.isArray(data.logs?.cash) ? data.logs.cash : [],
-                        acc: Array.isArray(data.logs?.acc) ? data.logs.acc : []
-                    },
-                    contacts: Array.isArray(data.contacts) ? data.contacts : [],
-                    blacklist: Array.isArray(data.blacklist) ? data.blacklist : []
-                };
-            } else {
-                db = getDefaultDb();
-                DB_DOC.set(db);
-            }
+        isSyncReady = true;
 
-            autoCleanup();
-            render();
-        }, (error) => {
-            console.error("Realtime sync hiba:", error);
-            customAlert("Nem sikerült az élő adatkapcsolat.");
-        });
-    }
+        if (docSnap.exists) {
+            const data = docSnap.data() || {};
+            db = {
+                members: Array.isArray(data.members) ? data.members : [],
+                balance: Number(data.balance || 0),
+                config: {
+                    tradeItems: Array.isArray(data.config?.tradeItems) ? data.config.tradeItems : [],
+                    fractions: Array.isArray(data.config?.fractions) ? data.config.fractions : [],
+                    accTypes: Array.isArray(data.config?.accTypes) ? data.config.accTypes : []
+                },
+                logs: {
+                    trade: Array.isArray(data.logs?.trade) ? data.logs.trade : [],
+                    cash: Array.isArray(data.logs?.cash) ? data.logs.cash : [],
+                    acc: Array.isArray(data.logs?.acc) ? data.logs.acc : []
+                },
+                contacts: Array.isArray(data.contacts) ? data.contacts : [],
+                blacklist: Array.isArray(data.blacklist) ? data.blacklist : []
+            };
+        } else {
+            db = getDefaultDb();
+            DB_DOC.set(db);
+        }
+
+        autoCleanup();
+        render();
+    }, (error) => {
+        console.error("Realtime sync hiba:", error);
+        customAlert("Nem sikerült az élő adatkapcsolat: " + error.message);
+    });
+}
 
     function showLoginModal() {
         showModal(`
