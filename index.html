@@ -443,6 +443,7 @@
         <table id="tabMembers">
             <thead>
                 <tr>
+                    <th>Becenév</th>
                     <th>IC Név</th>
                     <th>Rang</th>
                     <th>Discord</th>
@@ -708,6 +709,7 @@
 
         showModal(`
             <h3>${idx > -1 ? 'Szerkesztés' : 'Új Tag'}</h3>
+            <input id="mNick" placeholder="Becenév" value="${escapeHtml(m.nick || '')}">
             <input id="mIC" placeholder="IC Név" value="${escapeHtml(m.ic || '')}">
             <input id="mRank" placeholder="Rang" value="${escapeHtml(m.rank || '')}">
             <input id="mDC" placeholder="Discord" value="${escapeHtml(m.dc || '')}">
@@ -724,6 +726,7 @@
         const old = idx > -1 ? db.members[idx] : {};
         const data = {
             ic,
+            nick: document.getElementById('mNick').value.trim(),
             rank: document.getElementById('mRank').value.trim(),
             dc: document.getElementById('mDC').value.trim(),
             tel: document.getElementById('mTel').value.trim(),
@@ -971,6 +974,7 @@
 
         document.querySelector('#tabMembers tbody').innerHTML = (db.members || []).map((m, i) =>
             `<tr>
+                <td>${escapeHtml(m.nick || '-')}</td>
                 <td>${escapeHtml(m.ic || '')}</td>
                 <td>${escapeHtml(m.rank || '')}</td>
                 <td>${escapeHtml(m.dc || '')}</td>
