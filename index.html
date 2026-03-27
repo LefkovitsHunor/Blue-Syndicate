@@ -623,6 +623,35 @@ h1.logo-graffiti[style*="font-size:100px"] {
             margin: 0 !important;
         }
     }
+
+    /* =========================
+   DESKTOP FIX (VISSZAÁLLÍTÁS)
+   ========================= */
+
+@media (min-width: 641px) {
+    header {
+        background: var(--nav-bg);
+        padding: 15px 40px;
+        border-bottom: 2px solid var(--primary-blue);
+        display: flex !important;
+        align-items: center;
+        justify-content: space-between;
+        flex-direction: row !important;
+    }
+
+    nav {
+        display: flex !important;
+        gap: 8px;
+        flex-wrap: wrap;
+        width: auto !important;
+    }
+
+    nav button {
+        width: auto !important;
+        padding: 10px 20px !important;
+        font-size: inherit !important;
+    }
+}
         
     </style>
 </head>
