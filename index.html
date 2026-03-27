@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blue Syndicate</title>
+    <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-overlay: rgba(0, 0, 0, 0.96);
+            --container-bg: rgba(15, 15, 15, 0.98);
+            --text-main: #f0f0f0;
+            --primary-blue: #3795ff;
+            --neon-green: #39ff14;
+            --neon-red: #ff3131;
+            --nav-bg: #080808;
+            --border-color: #282828;
+            --shadow-blue: 0 0 15px rgba(55, 149, 255, 0.5);
+        }
+
+        * { box-sizing: border-box; transition: all 0.2s ease; }
+
+        body {
+            font-family: 'Segoe UI', sans-serif; margin: 0; min-height: 100vh;
+            background: #020202 url('https://i.kek.sh/UIV7utsVfZJ.png') no-repeat center center fixed;
+            background-size: cover; color: var(--text-main); overflow-x: hidden;
+        }
+
+                /* --- 2. RÉSZ: Táblázat sorok animációja --- */
+        tr {
+            animation: fadeInRow 0.4s ease forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeInRow {
+            from { 
+                opacity: 0; 
+                transform: translateX(-10px); 
+            }
+            to { 
+                opacity: 1; 
+                transform: translateX(0); 
+            }
+        }
+
+        /* Ez adja a lépcsőzetes beúszást */
+        tr:nth-child(1) { animation-delay: 0.05s; }
+        tr:nth-child(2) { animation-delay: 0.1s; }
+        tr:nth-child(3) { animation-delay: 0.15s; }
+        tr:nth-child(4) { animation-delay: 0.2s; }
+        tr:nth-child(5) { animation-delay: 0.25s; }
+
+        header { 
+            background: var(--nav-bg); padding: 15px 40px; border-bottom: 2px solid var(--primary-blue); 
+            display: flex; align-items: center; justify-content: space-between; 
+            position: sticky; top: 0; z-index: 1000; box-shadow: 0 5px 25px rgba(0,0,0,0.9);
+        }
+
+        .logo-graffiti { font-family: 'Permanent Marker', cursive; font-size: 32px; color: var(--primary-blue); text-shadow: var(--shadow-blue); }
+
+        nav { display: flex; gap: 8px; flex-wrap: wrap; }
+        
+        button {
+        background: rgba(55, 149, 255, 0.05);
+        color: #aaa;
+        border: 1px solid #333;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 6px;
+        font-family: 'Rajdhani', sans-serif;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); /* Sima átmenet */
+        position: relative;
+        overflow: hidden;
+        }
+
+        nav button:hover {
+            color: #fff;
+            border-color: var(--primary-blue);
+            background: rgba(55, 149, 255, 0.2);
+            box-shadow: 0 0 20px rgba(55, 149, 255, 0.4), inset 0 0 10px rgba(55, 149, 255, 0.2);
+            transform: translateY(-2px); /* Kicsit kiemelkedik */
+        }
+
+        button:active {
+            transform: translateY(1px) scale(0.98); /* Fizikai benyomódás érzet */
+            box-shadow: 0 0 5px var(--primary-blue);
+        }
+
+        .btn-danger:hover {
+            border-color: var(--neon-red);
+            background: rgba(255, 49, 49, 0.15);
+            box-shadow: 0 0 20px rgba(255, 49, 49, 0.4);
+        }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95); display: none; align-items: center; justify-content: center;
+            z-index: 2000; backdrop-filter: blur(10px);
+        }
+
+        .modal-content {
+            background: #0a0a0a; border: 2px solid var(--primary-blue); padding: 30px;
+            border-radius: 15px; width: 450px; position: relative; box-shadow: 0 0 50px rgba(0,0,0,1);
+            text-align: center;
+        }
+
+        .main-content { max-width: 1600px; margin: 30px auto; padding: 0 20px; }
+        .tab-content { display: none; background: var(--container-bg); padding: 30px; border-radius: 15px; border: 1px solid var(--border-color); }
+        .tab-content.active { display: block; }
+
+        input, select { 
+            width: 100%; padding: 12px; background: #080808; border: 1px solid #444; 
+            color: white; border-radius: 8px; margin-bottom: 10px; outline: none; appearance: none;
+        }
+
+                /* --- 4. RÉSZ: Mezők kijelölése (Focus) --- */
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--primary-blue) !important;
+            box-shadow: 0 0 15px rgba(55, 149, 255, 0.4) !important;
+            background: rgba(55, 149, 255, 0.05) !important;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='white'%3E%3Cpath d='M0 2l6 8 6-8z'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 15px center; }
+
+        /* Keresd meg ezt a részt a <style> blokkban */
+                .dashboard-card {
+            /* ... a többi már meglévő stílusod (background, border, stb.) ... */
+            
+            opacity: 0;
+            transform: translateY(20px);
+            animation: cardSlideUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+        }
+
+        /* Ezt pedig a .dashboard-card blokk UTÁN másold be: */
+        @keyframes cardSlideUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Ez adja meg, hogy ne egyszerre, hanem egymás után ugorjanak be */
+        .dashboard-card:nth-child(1) { animation-delay: 0.1s; }
+        .dashboard-card:nth-child(2) { animation-delay: 0.2s; }
+        .dashboard-card:nth-child(3) { animation-delay: 0.3s; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { text-align: left; padding: 12px; color: var(--primary-blue); border-bottom: 2px solid var(--primary-blue); font-size: 11px; }
+        td { padding: 12px; border-bottom: 1px solid #222; font-size: 14px; }
+
+        .btn-danger { border-color: var(--neon-red); color: var(--neon-red); background: transparent; }
+        .btn-danger:hover { background: rgba(255, 49, 49, 0.1); box-shadow: 0 0 10px var(--neon-red); }
+        
+        /* --- 3. RÉSZ: Lüktető Egyenleg --- */
+        #totalBal {
+            font-size: 4em;
+            font-family: 'Permanent Marker', cursive;
+            color: var(--primary-blue);
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(55, 149, 255, 0.6);
+            animation: glowPulse 3s infinite ease-in-out;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% { 
+                text-shadow: 0 0 15px rgba(55, 149, 255, 0.4); 
+                transform: scale(1); 
+            }
+            50% { 
+                text-shadow: 0 0 35px rgba(55, 149, 255, 0.8); 
+                transform: scale(1.03); 
+            }
+        }        
+
+        .member-card { background: #111; border: 1px solid #333; padding: 12px; border-radius: 8px; cursor: pointer; margin: 5px; display: inline-block; min-width: 130px; text-align: center; }
+        .member-card.selected { border-color: var(--neon-green); color: var(--neon-green); box-shadow: 0 0 10px rgba(57, 255, 20, 0.3); }
+
+        .trade-toggle-group { display: flex; gap: 10px; margin-bottom: 15px; }
+        .trade-toggle-group button { flex: 1; padding: 15px; opacity: 0.3; border: 2px solid #333; }
+        .trade-toggle-group button.active-elad { opacity: 1; border-color: var(--neon-green); color: var(--neon-green); }
+        .trade-toggle-group button.active-vetel { opacity: 1; border-color: var(--neon-red); color: var(--neon-red); }
+
+                /* Keress egy 'nav button' vagy hasonló részt, ha nincs, másold be ezt: */
+        nav button, .menu button {
+            position: relative; /* Ez kell, hogy az aláhúzás a gombhoz képest jelenjen meg */
+        }
+
+        /* Az aláhúzás alaphelyzete (láthatatlan) */
+        nav button::after {
+            content: '';
+            position: absolute;
+            bottom: 0; 
+            left: 50%;
+            width: 0; 
+            height: 2px;
+            background: var(--primary-blue);
+            transition: all 0.3s ease;
+            box-shadow: 0 0 8px var(--primary-blue);
+        }
+
+        /* Amikor a gomb aktív, kihúzódik a csík */
+        nav button.active::after {
+            width: 80%;
+            left: 10%;
+        }
+
+        .stat-value {
+    display: inline-block;
+}
+
+.stat-value.updated {
+    animation: valueFlash 0.5s ease;
+}
+
+@keyframes valueFlash {
+    0% { color: var(--primary-blue); text-shadow: 0 0 20px var(--primary-blue); }
+    50% { color: #fff; text-shadow: 0 0 30px #fff; transform: scale(1.1); }
+    100% { color: var(--primary-blue); text-shadow: 0 0 10px rgba(55, 149, 255, 0.4); }
+}
+
+    </style>
+</head>
+<body>
+    
+
+<div id="modalOverlay" class="modal-overlay">
+    <div id="modalBody" class="modal-content"></div>
+</div>
+
+<header id="siteHeader" style="display:none;">
+    <div class="logo-graffiti">Blue Syndicate</div>
+    <nav id="mainNav"></nav>
+</header>
+
+<div class="main-content" id="mainWrapper" style="display:none;">
+    <div id="főoldal" class="tab-content active"><h1 class="logo-graffiti" style="text-align:center; font-size:100px; margin-top:100px;">Blue Syndicate</h1></div>
+
+    <div id="dashboard" class="tab-content">
+        <div id="dashboard" class="tab-content active">
+            <div class="dashboard-grid">
+        
+                <div class="dashboard-card">
+                   <h3>TAGOK SZÁMA</h3>
+                    <h1 id="statMembers">0</h1>
+             </div>
+
+             <div class="dashboard-card" style="border: 2px solid #ff3131; text-align: center; margin-top: 20px;">
+                   <h3 style="color: #ff3131;">VESZÉLYZÓNA</h3>
+                   <button onclick="openResetModal()" style="background: rgba(255,49,49,0.2); color: #ff3131; border: 1px solid #ff3131; padding: 10px; cursor: pointer;">
+                       ADATOK TELJES TÖRLÉSE
+                   </button>
+                   <button onclick="openResetModal()" style=bottom:20px; right:20px; background:red; `width: 100%` color:white;">TESZT TÖRLÉS GOMB</button>
+        </div>
+
+        </div>
+        </div>
+        <h2>Konfiguráció</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div class="dashboard-card">
+                <h3>Üzlet Tárgyak</h3>
+                <input type="text" id="inTrade" placeholder="Új tárgy...">
+                <button class="btn-primary" style="width:100%" onclick="addConfig('tradeItems', 'inTrade')">Hozzáadás</button>
+                <table id="tabTrade"><tbody></tbody></table>
+            </div>
+            <div class="dashboard-card">
+                <h3>Könyvelési típusok</h3>
+                <input type="text" id="inAccName" placeholder="Név"><input type="number" id="inAccPrice" placeholder="Ár">
+                <button class="btn-primary" style="width:100%" onclick="addAccType()">Hozzáadás</button>
+                <table id="tabAccType"><tbody></tbody></table>
+            </div>
+            <div class="dashboard-card">
+                <h3>Frakciók</h3>
+                <input type="text" id="inFrac" placeholder="Frakció név...">
+                <button class="btn-primary" style="width:100%" onclick="addConfig('fractions', 'inFrac')">Hozzáadás</button>
+                <table id="tabFrac"><tbody></tbody></table>
+            </div>
+            <button onclick="openResetModal()" style="display: block !important; width: 200px; height: 50px; background: red; color: rgb(8, 8, 8); border: 5px solid rgba(155, 27, 10, 0.979); font-weight: bold; cursor: pointer; position: relative; z-index: 99999;">
+    Adatok törlése
+</button>
+        </div>
+    </div>
+
+    <div id="taglista" class="tab-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <h2>Taglista</h2>
+            <button class="btn-primary" onclick="openMemberModal()">+ Új Tag Felvétele</button>
+        </div>
+        <table id="tabMembers"><thead><tr><th>IC Név</th><th>Rang</th><th>Discord</th><th>Tel.</th><th>Művelet</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div id="könyvelés" class="tab-content">
+        <h2>Könyvelés (40% osztás)</h2>
+        <p>Kijelölés gombokkal:</p>
+        <div id="accMemberGrid" style="margin-bottom:20px;"></div>
+        <div class="dashboard-card" style="max-width:400px;">
+            <select id="selAccType"></select>
+            <input type="number" id="inAccQty" value="1">
+            <button class="btn-primary" style="width:100%" onclick="finalizeAccounting()">Rögzítés</button>
+        </div>
+        <h3>Könyvelési Napló</h3>
+        <table id="tabAccLog"><thead><tr><th>Idő</th><th>Típus</th><th>Összeg</th><th>Résztvevők</th><th>Jutalék/fő</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div id="üzletek" class="tab-content">
+        <h2>Üzletek</h2>
+        <div class="dashboard-card" style="max-width:500px;">
+            <input type="text" id="trPartner" placeholder="Partner neve">
+            <div class="trade-toggle-group">
+                <button id="btnElad" onclick="setTrType('eladas')">ELADÁS</button>
+                <button id="btnVetel" onclick="setTrType('vetel')">VÉTEL</button>
+            </div>
+            <select id="selTrItem"></select>
+            <input type="number" id="trAmt" placeholder="Összeg">
+            <button class="btn-primary" style="width:100%" onclick="processTrade()">Mentés</button>
+        </div>
+        <table id="tabTradeLog"><thead><tr><th>Idő</th><th>Partner</th><th>Típus</th><th>Tárgy</th><th>Összeg</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div id="pénzmozgás" class="tab-content">
+    <h1 id="totalBal">0 Cs</h1>
+    <div class="dashboard-card" style="max-width:400px; margin:auto;">
+        <input type="text" id="cashNote" placeholder="Mozgás indoka">
+        <input type="number" id="cashAmt" placeholder="Összeg">
+        
+        <button class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="cashOp('BE')">Berakás</button>
+        <button class="btn-danger" style="width:100%" onclick="cashOp('KI')">Kivétel</button>
+    </div>
+    <table id="tabCashLog">
+        <thead>
+            <tr>
+                <th>Idő</th>
+                <th>Típus</th>
+                <th>Indok</th>
+                <th>Összeg</th>
+                <th>Egyenleg</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    </div>
+
+    <div id="telefonkönyv" class="tab-content">
+        <h2>Telefonkönyv</h2>
+        <div class="dashboard-card" style="max-width:500px;">
+            <input type="text" id="phName" placeholder="Név">
+            <input type="text" id="phNum" placeholder="Telefonszám">
+            <select id="phFracSelect"></select>
+            <button class="btn-primary" style="width:100%" onclick="addContact()">Mentés</button>
+        </div>
+        <div id="phGroups"></div>
+    </div>
+
+    <div id="fizetés" class="tab-content">
+        <h2>Kifizetések</h2>
+        <table id="tabPay"><thead><tr><th>Név</th><th>Jutalék</th><th>Állapot</th><th>Művelet</th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div id="fekete-lista" class="tab-content">
+        <h2>Blacklist</h2>
+        <div class="dashboard-card">
+            <input id="blN" placeholder="Név">
+            <input id="blI" placeholder="Indok">
+            <button class="btn-danger" style="width:100%" onclick="addBL()">Tiltás</button>
+        </div>
+        <table id="tabBL"><tbody></tbody></table>
+    </div>
+</div>
+
+<script>
+    
+    const ROLES = { "Leader": "boss2026", "Konyvelo": "pay123", "Tag": "syndicate" };
+    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "pénzmozgás", "telefonkönyv", "fizetés", "fekete-lista"];
+    
+    let db = JSON.parse(localStorage.getItem('synd_v54_db')) || {
+        members: [], balance: 0, config: { tradeItems: [], fractions: [], accTypes: [] },
+        logs: { trade: [], cash: [], acc: [] }, contacts: [], blacklist: []
+    };
+    let currentTrType = null;
+    let selectedAccMembers = new Set();
+
+    function save() { localStorage.setItem('synd_v54_db', JSON.stringify(db)); render(); }
+    function closeModal() { document.getElementById('modalOverlay').style.display = 'none'; }
+    function showModal(h) { document.getElementById('modalBody').innerHTML = h; document.getElementById('modalOverlay').style.display = 'flex'; }
+
+    function customAlert(msg) {
+        showModal(`<h3>Értesítés</h3><p>${msg}</p><button class="btn-primary" onclick="closeModal()" style="width:100%">OK</button>`);
+    }
+
+    function customConfirm(msg, onConfirm) {
+        showModal(`<h3>Megerősítés</h3><p>${msg}</p><div style="display:flex; gap:10px;"><button class="btn-danger" style="flex:1" id="confirmYes">IGEN</button><button class="btn-primary" style="flex:1" onclick="closeModal()">MÉGSE</button></div>`);
+        document.getElementById('confirmYes').onclick = () => { onConfirm(); closeModal(); };
+    }
+
+    // FUNKCIÓK
+    function addConfig(key, id) {
+        const val = document.getElementById(id).value.trim();
+        if(!val) return;
+        db.config[key].push(val);
+        document.getElementById(id).value = "";
+        save();
+    }
+
+    function addAccType() {
+        const n = document.getElementById('inAccName').value, p = parseInt(document.getElementById('inAccPrice').value);
+        if(!n || isNaN(p)) return;
+        db.config.accTypes.push({name: n, price: p});
+        document.getElementById('inAccName').value = ""; document.getElementById('inAccPrice').value = "";
+        save();
+    }
+
+    function openMemberModal(idx = -1) {
+        const m = idx > -1 ? db.members[idx] : {ic:'', rank:'', dc:'', tel:''};
+        showModal(`
+            <h3>${idx > -1 ? 'Szerkesztés' : 'Új Tag'}</h3>
+            <input id="mIC" placeholder="IC Név" value="${m.ic}">
+            <input id="mRank" placeholder="Rang" value="${m.rank}">
+            <input id="mDC" placeholder="Discord" value="${m.dc}">
+            <input id="mTel" placeholder="Telefon" value="${m.tel}">
+            <button class="btn-primary" style="width:100%" onclick="confirmMember(${idx})">MENTÉS</button>
+            <button class="btn-danger" style="width:100%; margin-top:5px;" onclick="closeModal()">MÉGSE</button>
+        `);
+    }
+
+    function confirmMember(idx) {
+        const ic = document.getElementById('mIC').value; if(!ic) return;
+        const d = { ic, rank: document.getElementById('mRank').value, dc: document.getElementById('mDC').value, tel: document.getElementById('mTel').value, pay: idx > -1 ? db.members[idx].pay : 0, reqPay: idx > -1 ? db.members[idx].reqPay : false };
+        if(idx > -1) db.members[idx] = d; else db.members.push(d);
+        closeModal(); save();
+    }
+
+    function deleteMember(idx) {
+        customConfirm(`Biztosan törlöd: ${db.members[idx].ic}?`, () => { db.members.splice(idx, 1); save(); });
+    }
+
+    function toggleAccMember(i) { if(selectedAccMembers.has(i)) selectedAccMembers.delete(i); else selectedAccMembers.add(i); render(); }
+
+    function finalizeAccounting() {
+    if(selectedAccMembers.size === 0) return customAlert("Válassz tagokat!");
+    const sel = document.getElementById('selAccType'), price = parseInt(sel.value), qty = parseInt(document.getElementById('inAccQty').value);
+    const total = price * qty;
+    db.balance += total;
+    const share = Math.floor((total * 0.4) / selectedAccMembers.size);
+    
+    selectedAccMembers.forEach(idx => { 
+        db.members[idx].pay += share; 
+        // Rögzítjük a mai dátumot (ezredmásodpercben)
+        db.members[idx].payDate = new Date().getTime(); 
+        db.members[idx].isDone = false; // Új pénznél újra aktív lesz a sor
+    });
+
+    db.logs.acc.push({time: new Date().toLocaleTimeString(), type: sel.options[sel.selectedIndex].text, total, share});
+    db.logs.cash.push({time: new Date().toLocaleTimeString(), event: 'Könyvelés', val: total, bal: db.balance});
+    selectedAccMembers.clear();
+    save();
+    }
+
+    function setTrType(t) {
+        currentTrType = t;
+        document.getElementById('btnElad').className = t === 'eladas' ? 'active-elad' : '';
+        document.getElementById('btnVetel').className = t === 'vetel' ? 'active-vetel' : '';
+    }
+
+    function processTrade() {
+        const p = document.getElementById('trPartner').value, a = parseInt(document.getElementById('trAmt').value);
+        if(!p || isNaN(a) || !currentTrType) return;
+        const diff = currentTrType === 'eladas' ? a : -a;
+        db.balance += diff;
+        db.logs.trade.push({time: new Date().toLocaleTimeString(), p, type: currentTrType, itm: document.getElementById('selTrItem').value, a});
+        db.logs.cash.push({time: new Date().toLocaleTimeString(), event: `Üzlet: ${p}`, val: diff, bal: db.balance});
+        save();
+    }
+
+    function addContact() {
+        const n = document.getElementById('phName').value, s = document.getElementById('phNum').value, f = document.getElementById('phFracSelect').value;
+        if(!n || !s) return;
+        db.contacts.push({n, s, f});
+        document.getElementById('phName').value = ""; document.getElementById('phNum').value = "";
+        save();
+    }
+
+    function cashOp(m) {
+    const a = parseInt(document.getElementById('cashAmt').value);
+    // Beolvassuk az indokot, ha üres, adunk neki egy alapértelmezett nevet
+    const note = document.getElementById('cashNote').value.trim() || (m === 'BE' ? 'Befizetés' : 'Kivétel');
+    
+    if(isNaN(a) || a <= 0) return customAlert("Adj meg egy érvényes összeget!");
+
+    db.balance += (m === 'BE' ? a : -a);
+    
+    // Elmentjük az indokot is a naplóba
+    db.logs.cash.push({
+        time: new Date().toLocaleTimeString(), 
+        event: m === 'BE' ? 'BE' : 'KI', 
+        note: note, 
+        val: m === 'BE' ? a : -a, 
+        bal: db.balance
+    });
+
+    // Mezők kiürítése a gombnyomás után
+    document.getElementById('cashAmt').value = "";
+    document.getElementById('cashNote').value = "";
+    
+    save();
+}
+
+    function togglePayReq(idx) { db.members[idx].reqPay = !db.members[idx].reqPay; save(); }
+
+    // KRITIKUS JAVÍTÁS: Levonás a közösből kifizetéskor
+    function payOut(idx) {
+
+            function togglePayReq(idx) { 
+        // Csak az állapotot váltja, nem nyúl a pénzhez
+        db.members[idx].reqPay = !db.members[idx].reqPay; 
+        save(); 
+    }
+        const m = db.members[idx];
+        if(m.pay <= 0) return customAlert("Nincs mit kifizetni!");
+        
+        customConfirm(`Kifizetsz ${m.pay} Cs-t ${m.ic} részére? Ezzel levonjuk a közösből.`, () => {
+            db.balance -= m.pay; // Levonás a kasszából
+            db.logs.cash.push({
+                time: new Date().toLocaleTimeString(), 
+                event: `Kifizetés: ${m.ic}`, 
+                val: -m.pay, 
+                bal: db.balance
+            });
+
+                // Naplózás a pénzmozgáshoz
+            db.logs.cash.push({
+                time: new Date().toLocaleTimeString(), 
+                event: `Kifizetés: ${m.ic}`, 
+                val: -m.pay, 
+                bal: db.balance
+            });
+
+            m.reqPay = true;
+            save();
+        });
+    }
+
+    function addBL() {
+        const n = document.getElementById('blN').value, i = document.getElementById('blI').value;
+        if(!n) return;
+        db.blacklist.push({n, i});
+        document.getElementById('blN').value = ""; document.getElementById('blI').value = "";
+        save();
+    }
+
+    function render() {
+        document.getElementById('totalBal').innerText = db.balance.toLocaleString() + " Cs";
+        
+        // Konfigurációk
+        document.querySelector('#tabTrade tbody').innerHTML = db.config.tradeItems.map((v, i) => `<tr><td>${v}</td><td><button onclick="db.config.tradeItems.splice(${i},1); save()">X</button></td></tr>`).join('');
+        document.querySelector('#tabFrac tbody').innerHTML = db.config.fractions.map((v, i) => `<tr><td>${v}</td><td><button onclick="db.config.fractions.splice(${i},1); save()">X</button></td></tr>`).join('');
+        document.querySelector('#tabAccType tbody').innerHTML = db.config.accTypes.map((v, i) => `<tr><td>${v.name}</td><td>${v.price} Cs</td><td><button onclick="db.config.accTypes.splice(${i},1); save()">X</button></td></tr>`).join('');
+        
+        // Tagok
+        document.querySelector('#tabMembers tbody').innerHTML = db.members.map((m, i) => `<tr><td>${m.ic}</td><td>${m.rank}</td><td>${m.dc}</td><td>${m.tel}</td><td><button onclick="openMemberModal(${i})">Szerk.</button><button class="btn-danger" onclick="deleteMember(${i})">X</button></td></tr>`).join('');
+        document.getElementById('accMemberGrid').innerHTML = db.members.map((m, i) => `<div class="member-card ${selectedAccMembers.has(i)?'selected':''}" onclick="toggleAccMember(${i})">${m.ic}</div>`).join('');
+
+        // Selectek
+        const fill = (id, list, v, t) => { const el = document.getElementById(id); if(el) el.innerHTML = list.map(it => `<option value="${v?it[v]:it}">${t?it[t]:it}</option>`).join(''); }
+        fill('selTrItem', db.config.tradeItems); fill('phFracSelect', db.config.fractions); fill('selAccType', db.config.accTypes, 'price', 'name');
+
+        // Naplók
+        document.querySelector('#tabAccLog tbody').innerHTML = db.logs.acc.slice(-10).reverse().map(l => `<tr><td>${l.time}</td><td>${l.type}</td><td>${l.total} Cs</td><td>${l.peps}</td><td>${l.share} Cs</td></tr>`).join('');
+        document.querySelector('#tabTradeLog tbody').innerHTML = db.logs.trade.slice(-10).reverse().map(l => `<tr><td>${l.time}</td><td>${l.p}</td><td>${l.type}</td><td>${l.itm}</td><td>${l.a} Cs</td></tr>`).join('');
+        document.querySelector('#tabCashLog tbody').innerHTML = db.logs.cash.slice(-15).reverse().map(l => `
+        <tr>
+            <td>${l.time}</td>
+            <td style="font-weight:bold;">${l.event}</td>
+            <td style="font-style:italic; color:#aaa;">${l.note || '-'}</td>
+            <td style="color:${l.val < 0 ? 'var(--neon-red)' : 'var(--neon-green)'}">
+                ${l.val.toLocaleString()} Cs
+            </td>
+            <td>${l.bal.toLocaleString()} Cs</td>
+        </tr>`).join('');
+
+        // Fizetések
+        // Fizetések táblázat generálása
+        // Fizetések táblázat - Halványításos verzió (nem tünteti el)
+        // Fizetések táblázat - Mindig látható, elhalványuló sorokkal
+            // Ezt a render() függvényen belül keresd meg (kb. a 350. sor környékén)
+        document.querySelector('#tabPay tbody').innerHTML = db.members.map(m => {
+            const idx = db.members.indexOf(m);
+            if (!m.pay || m.pay <= 0) return ''; 
+
+            const kétHét = 14 * 24 * 60 * 60 * 1000;
+            const most = new Date().getTime();
+            const eltelt = most - (m.payDate || most);
+            const hatralevoMs = kétHét - eltelt;
+            const napok = Math.max(0, Math.ceil(hatralevoMs / (1000 * 60 * 60 * 24)));
+
+            let allapotKijelzes = m.isDone ? "KIFIZETVE" : `Még ${napok} napig elérhető`;
+            let sorStilus = m.isDone ? "opacity: 0.3; filter: grayscale(1);" : "opacity: 1;";
+
+            if (!m.isDone) {
+                if (m.reqPay === true) allapotKijelzes = "Kérte a fizetést";
+                else if (m.reqPay === false) allapotKijelzes = "Nem kérte a fizetést";
+                else allapotKijelzes = "Kéri a fizetést?";
+            }
+
+            return `
+            <tr style="${sorStilus}">
+                <td>${m.ic}</td>
+                <td style="font-weight: bold;">${m.pay.toLocaleString()} Cs</td>
+                <td style="color:${m.isDone ? 'var(--neon-green)' : (m.reqPay === false ? 'var(--neon-red)' : '#777')}">
+                    ${allapotKijelzes}
+                </td>
+                <td>
+                    ${!m.isDone ? `
+                        <button onclick="togglePayReq(${idx}, false)">Nem kéri</button>
+                        <button class="btn-primary" onclick="payOut(${idx})">Kifizetés</button>
+                    ` : `<span style="color: var(--neon-green); font-size: 11px;">RENDEZVE</span>`}
+                </td>
+            </tr>`;
+        }).join('');
+
+        // Telefonkönyv
+        let phHtml = "";
+        db.config.fractions.forEach(f => {
+            const group = db.contacts.filter(c => c.f === f);
+            if(group.length) phHtml += `<div class="dashboard-card"><h4>${f}</h4><table>` + group.map(c => `<tr><td>${c.n}</td><td>${c.s}</td><td><button onclick="db.contacts.splice(${db.contacts.indexOf(c)},1); save()">X</button></td></tr>`).join('') + `</table></div>`;
+        });
+        document.getElementById('phGroups').innerHTML = phHtml;
+
+        // Blacklist
+        document.querySelector('#tabBL tbody').innerHTML = db.blacklist.map((b,i) => `<tr><td>${b.n}</td><td>${b.i}</td><td><button class="btn-danger" onclick="db.blacklist.splice(${i},1); save()">X</button></td></tr>`).join('');
+    }
+
+    function showTab(id) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-'+id).classList.add('active');
+    }
+
+    function logout() { localStorage.removeItem('synd_auth'); location.reload(); }
+
+    window.onload = () => {
+        document.getElementById('mainNav').innerHTML = MENU.map(m => `<button onclick="showTab('${m}')" id="btn-${m}">${m.toUpperCase()}</button>`).join('') + `<button onclick="logout()">LOGOUT</button>`;
+        if(!localStorage.getItem('synd_auth')) {
+            showModal(`<h2>Syndicate Access</h2><input id="lU" placeholder="User"><input type="password" id="lP" placeholder="Password"><button class="btn-primary" style="width:100%" onclick="L()">Login</button>`);
+            window.L = () => { if(ROLES[document.getElementById('lU').value] === document.getElementById('lP').value) { localStorage.setItem('synd_auth', '1'); closeModal(); location.reload(); } else customAlert("Hibás!"); };
+        } else {
+            document.getElementById('siteHeader').style.display = 'flex';
+            document.getElementById('mainWrapper').style.display = 'block';
+            autoCleanup(); // Itt fut le a tagonkénti ellenőrzés
+            render();
+            render();
+        }
+    };
+
+    //Automatikus törlés
+    function autoCleanup() {
+    const kétHét = 14 * 24 * 60 * 60 * 1000; // 14 nap ms-ban
+    const most = new Date().getTime();
+    let valtozas = false;
+
+    db.members.forEach(m => {
+        // Csak akkor vizsgáljuk, ha van kifizetendő összege és van dátuma
+        if (m.pay > 0 && m.payDate) {
+            if (most - m.payDate > kétHét) {
+                // Ha letelt a 14 nap: töröljük az adatokat a listából
+                // De a db.balance-hoz NEM nyúlunk, így a széfben marad a pénz
+                m.pay = 0;
+                m.payDate = null;
+                m.isDone = false;
+                m.reqPay = null;
+                valtozas = true;
+            }
+        }
+    });
+
+        if (valtozas) save();
+    }
+
+        // Megnyitja az ablakot
+    function openResetModal() {
+        document.getElementById('resetModal').style.display = 'flex';
+    }
+
+    // Bezárja az ablakot
+    function closeResetModal() {
+        document.getElementById('resetModal').style.display = 'none';
+    }
+
+    // TÉNYLEG TÖRÖL MINDENT
+    function hardReset() {
+        localStorage.clear(); // Kitörli a böngésző memóriáját
+        alert("Minden adat törölve!");
+        location.reload(); // Újratölti az oldalt, hogy tiszta legyen minden
+    }
+</script>
+<div id="resetModal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: #111; border: 2px solid #ff3131; padding: 30px; border-radius: 10px; text-align: center; max-width: 400px;">
+        <h2 style="color: #ff3131;">ADATTÖRLÉS</h2>
+        <p>Biztos vagy benne hogy MINDEN adatot ki szeretnél törölni?</p>
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="closeResetModal()" style="padding: 10px 20px;">MÉGSE</button>
+            <button onclick="hardReset()" style="background: #ff3131; color: white; border: none; padding: 10px 20px; cursor: pointer;">IGEN, TÖRÖLJ</button>
+        </div>
+    </div>
+</div>
+</body>
+</html>
