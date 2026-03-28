@@ -1094,6 +1094,25 @@ h1.logo-graffiti[style*="font-size:100px"] {
 <script>
     const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "pénzmozgás", "telefonkönyv", "fizetés", "fekete-lista"];
 
+    const RANK_ORDER = [
+        "Prodigy",
+        "Organizer",
+        "Operator",
+        "Specialist",
+        "Enforcer",
+        "Hunter",
+        "Rebel",
+        "Outsider",
+        "Rookie"
+    ];
+
+    function getRankIndex(rank) {
+        const i = RANK_ORDER.indexOf(rank);
+        return i === -1 ? 999 : i; // ha nincs benne, menjen a végére
+    }
+
+    .map((m) =>
+    
     const firebaseConfig = {
         apiKey: "AIzaSyCbNX5_JbOcQ4F-QKTmiNR6qp7_9m_HQEE",
         authDomain: "blue-syndicate.firebaseapp.com",
@@ -1577,7 +1596,12 @@ function flashBalanceDirection(isUp) {
             `<tr><td>${escapeHtml(v.name)}</td><td>${Number(v.price || 0).toLocaleString()} Cs</td><td><button onclick="removeAccType(${i})">X</button></td></tr>`
         ).join('');
 
-        document.querySelector('#tabMembers tbody').innerHTML = (db.members || []).map((m, i) =>
+        const sortedMembers = (db.members || [])
+            .map((m, i) => ({ ...m, _originalIndex: i }))
+            .sort((a, b) => getRankIndex(a.rank) - getRankIndex(b.rank));
+        
+        document.querySelector('#tabMembers tbody').innerHTML = sortedMembers.map((m, i) =>
+        
             `<tr>
                 <td>${escapeHtml(m.nick || '-')}</td>
                 <td>${escapeHtml(m.ic || '')}</td>
