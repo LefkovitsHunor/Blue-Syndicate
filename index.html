@@ -1039,6 +1039,21 @@ h1.logo-graffiti[style*="font-size:100px"] {
         </table>
     </div>
 
+    <div id="árak" class="tab-content">
+        <div class="section-head">
+            <h2>Árak</h2>
+        </div>
+    
+        <div class="dashboard-card" style="max-width:600px; margin-bottom:20px;">
+            <select id="priceFaction"></select>
+            <input type="text" id="priceItem" placeholder="Mit árul?">
+            <input type="number" id="priceValue" placeholder="Mennyiért?">
+            <button class="btn-primary" style="width:100%" onclick="addPriceItem()">Mentés</button>
+        </div>
+    
+        <div id="priceGroups"></div>
+    </div>
+    
     <div id="telefonkönyv" class="tab-content">
         <h2>Telefonkönyv</h2>
         <div class="dashboard-card" style="max-width:500px;">
@@ -1092,7 +1107,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
 <script>
-    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "pénzmozgás", "telefonkönyv", "fizetés", "fekete-lista"];
+    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "fekete-lista"];
 
     const RANK_ORDER = [
         "Prodigy",
@@ -1150,7 +1165,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
             },
             contacts: [],
             blacklist: [],
-            accCart: []
+            accCart: [],
+            prices: []
         };
     }
 
@@ -1632,6 +1648,7 @@ function flashBalanceDirection(isUp) {
         fill('selTrItem', db.config.tradeItems);
         fill('phFracSelect', db.config.fractions);
         fill('selAccType', db.config.accTypes, 'price', 'name');
+        fill('priceFaction', db.config.fractions);
 
         document.querySelector('#tabAccLog tbody').innerHTML = (db.logs.acc || []).slice(-10).reverse().map(l =>
             `<tr>
@@ -1738,6 +1755,69 @@ function flashBalanceDirection(isUp) {
             `;
         }
 
+        let priceHtml = "";
+            (db.config.fractions || []).forEach(f => {
+                const group = (db.prices || []).filter(p => p.faction === f);
+            
+                if (group.length) {
+                    priceHtml += `
+                        <div class="dashboard-card">
+                            <h4>${escapeHtml(f)}</h4>
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Tárgy</th>
+                                        <th>Ár</th>
+                                        <th>Művelet</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${group.map(p => `
+                                        <tr>
+                                            <td>${escapeHtml(p.item)}</td>
+                                            <td>${Number(p.price || 0).toLocaleString()} Cs</td>
+                                            <td><button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">X</button></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                }
+            });
+            
+            const noFactionPrices = (db.prices || []).filter(p => !p.faction);
+            if (noFactionPrices.length) {
+                priceHtml += `
+                    <div class="dashboard-card">
+                        <h4>Egyéb</h4>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tárgy</th>
+                                    <th>Ár</th>
+                                    <th>Művelet</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${noFactionPrices.map(p => `
+                                    <tr>
+                                        <td>${escapeHtml(p.item)}</td>
+                                        <td>${Number(p.price || 0).toLocaleString()} Cs</td>
+                                        <td><button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">X</button></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            const priceGroupsEl = document.getElementById('priceGroups');
+            if (priceGroupsEl) {
+                priceGroupsEl.innerHTML = priceHtml || `<p class="muted">Nincs elmentett árlista.</p>`;
+            }
+        
         document.getElementById('phGroups').innerHTML = phHtml || `<p class="muted">Nincs elmentett kontakt.</p>`;
 
         document.querySelector('#tabBL tbody').innerHTML = (db.blacklist || []).map((b, i) =>
@@ -1834,7 +1914,8 @@ function flashBalanceDirection(isUp) {
                 },
                 contacts: Array.isArray(data.contacts) ? data.contacts : [],
                 blacklist: Array.isArray(data.blacklist) ? data.blacklist : [],
-                accCart: Array.isArray(data.accCart) ? data.accCart : []
+                accCart: Array.isArray(data.accCart) ? data.accCart : [],
+                prices: Array.isArray(data.prices) ? data.prices : []
             };
         } else {
             db = getDefaultDb();
@@ -2031,6 +2112,36 @@ function flashBalanceDirection(isUp) {
         });
     };
 
+    function addPriceItem() {
+        const faction = document.getElementById('priceFaction').value.trim();
+        const item = document.getElementById('priceItem').value.trim();
+        const price = parseInt(document.getElementById('priceValue').value, 10);
+    
+        if (!faction || !item || isNaN(price) || price <= 0) {
+            return customAlert("Tölts ki minden mezőt helyesen.");
+        }
+    
+        if (!Array.isArray(db.prices)) db.prices = [];
+    
+        db.prices.push({
+            faction,
+            item,
+            price
+        });
+    
+        document.getElementById('priceItem').value = "";
+        document.getElementById('priceValue').value = "";
+        save();
+    }
+    
+    function deletePriceItem(index) {
+        if (!Array.isArray(db.prices)) db.prices = [];
+        if (index < 0 || index >= db.prices.length) return;
+    
+        db.prices.splice(index, 1);
+        save();
+    }
+    
     function addToCart() {
         const sel = document.getElementById('selAccType');
         const price = parseInt(sel.value, 10);
