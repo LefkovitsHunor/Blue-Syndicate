@@ -900,12 +900,27 @@ h1.logo-graffiti[style*="font-size:100px"] {
                 <h3>TAGOK SZÁMA</h3>
                 <h1 id="statMembers" class="stat-value">0</h1>
             </div>
-
+    
             <div class="dashboard-card">
                 <h3>EGYENLEG</h3>
                 <h1 id="statBalance" class="stat-value">0 Cs</h1>
             </div>
-
+    
+            <div class="dashboard-card">
+                <h3>NAPI PROFIT</h3>
+                <h1 id="statDailyProfit" class="stat-value">0 Cs</h1>
+            </div>
+    
+            <div class="dashboard-card">
+                <h3>HETI PROFIT</h3>
+                <h1 id="statWeeklyProfit" class="stat-value">0 Cs</h1>
+            </div>
+    
+            <div class="dashboard-card">
+                <h3>HAVI PROFIT</h3>
+                <h1 id="statMonthlyProfit" class="stat-value">0 Cs</h1>
+            </div>
+    
             <div class="dashboard-card danger-zone">
                 <h3 style="color: #ff3131;">TELJES TÖRLÉS</h3>
                 <button onclick="openResetModal()" style="background: rgba(255,49,49,0.2); color: #ff3131; border: 1px solid #ff3131; padding: 10px; cursor: pointer;">
@@ -1337,6 +1352,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
         db.logs.cash.push({
             time: nowString(),
+            ts: Date.now(),
             event: 'Könyvelés',
             note: sel.options[sel.selectedIndex]?.text || '',
             val: total,
@@ -1376,6 +1392,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
         db.logs.cash.push({
             time: nowString(),
+            ts: Date.now(),
             event: `Üzlet: ${p}`,
             note: `${currentTrType} - ${item}`,
             val: diff,
@@ -1417,6 +1434,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
         db.logs.cash.push({
             time: nowString(),
+            ts: Date.now(),
             event: m === 'BE' ? 'BE' : 'KI',
             note: note,
             val: m === 'BE' ? a : -a,
@@ -1449,6 +1467,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
             db.logs.cash.push({
                 time: nowString(),
+                ts: Date.now(),
                 event: `Kifizetés: ${m.ic}`,
                 note: 'Tagi kifizetés',
                 val: -m.pay,
@@ -1569,13 +1588,62 @@ function flashBalanceDirection(isUp) {
             console.warn("Hang lejátszása nem sikerült:", e);
         }
     }
+
+    function calculateProfits() {
+        const logs = Array.isArray(db.logs?.cash) ? db.logs.cash : [];
+        const now = new Date();
+    
+        const startOfDay = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            0, 0, 0, 0
+        ).getTime();
+    
+        const currentDay = now.getDay();
+        const diffToMonday = currentDay === 0 ? 6 : currentDay - 1;
+    
+        const startOfWeekDate = new Date(now);
+        startOfWeekDate.setDate(now.getDate() - diffToMonday);
+        startOfWeekDate.setHours(0, 0, 0, 0);
+        const startOfWeek = startOfWeekDate.getTime();
+    
+        const startOfMonth = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            1,
+            0, 0, 0, 0
+        ).getTime();
+    
+        let daily = 0;
+        let weekly = 0;
+        let monthly = 0;
+    
+        logs.forEach(log => {
+            const ts = Number(log.ts || 0);
+            const val = Number(log.val || 0);
+    
+            if (!ts) return;
+    
+            if (ts >= startOfDay) daily += val;
+            if (ts >= startOfWeek) weekly += val;
+            if (ts >= startOfMonth) monthly += val;
+        });
+    
+        return { daily, weekly, monthly };
+    }
+    
     
     function render() {
         console.log("RENDER DB =", JSON.parse(JSON.stringify(db)));
         const currentBalance = Number(db.balance || 0);
+        const { daily, weekly, monthly } = calculateProfits();
     
         const totalBalEl = document.getElementById('totalBal');
         const statBalEl = document.getElementById('statBalance');
+        const statDailyProfitEl = document.getElementById('statDailyProfit');
+        const statWeeklyProfitEl = document.getElementById('statWeeklyProfit');
+        const statMonthlyProfitEl = document.getElementById('statMonthlyProfit');
     
         if (totalBalEl && statBalEl) {
             if (lastRenderedBalance === 0 && currentBalance === 0) {
@@ -1598,6 +1666,21 @@ function flashBalanceDirection(isUp) {
         lastRenderedBalance = currentBalance;
         
         document.getElementById('statMembers').innerText = (db.members || []).length;
+
+        if (statDailyProfitEl) {
+            statDailyProfitEl.innerText = daily.toLocaleString() + " Cs";
+            statDailyProfitEl.style.color = daily < 0 ? 'var(--neon-red)' : 'var(--neon-green)';
+        }
+        
+        if (statWeeklyProfitEl) {
+            statWeeklyProfitEl.innerText = weekly.toLocaleString() + " Cs";
+            statWeeklyProfitEl.style.color = weekly < 0 ? 'var(--neon-red)' : 'var(--neon-green)';
+        }
+        
+        if (statMonthlyProfitEl) {
+            statMonthlyProfitEl.innerText = monthly.toLocaleString() + " Cs";
+            statMonthlyProfitEl.style.color = monthly < 0 ? 'var(--neon-red)' : 'var(--neon-green)';
+        }
 
         document.querySelector('#tabTrade tbody').innerHTML = (db.config.tradeItems || []).map((v, i) =>
             `<tr><td>${escapeHtml(v)}</td><td><button onclick="removeTradeItem(${i})">X</button></td></tr>`
@@ -2241,6 +2324,7 @@ function flashBalanceDirection(isUp) {
     
         db.logs.cash.push({
             time: nowString(),
+            ts: Date.now(),
             event: "Könyvelés (kosár)",
             note: db.accCart.map(item => `${item.name} x${item.qty}`).join(', '),
             val: total,
