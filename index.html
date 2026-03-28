@@ -778,6 +778,83 @@ h1.logo-graffiti[style*="font-size:100px"] {
         flex-wrap: nowrap !important;
     }
 }
+
+    .music-player {
+        max-width: 700px;
+        margin: 30px auto 0;
+        background: rgba(10, 10, 10, 0.95);
+        border: 1px solid #2a2a2a;
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 0 25px rgba(0,0,0,0.45);
+        text-align: center;
+    }
+    
+    .music-player h3 {
+        margin-top: 0;
+        color: var(--primary-blue);
+        font-family: 'Rajdhani', sans-serif;
+        letter-spacing: 1px;
+    }
+    
+    .music-title {
+        font-size: 18px;
+        margin-bottom: 15px;
+        color: #fff;
+        font-weight: bold;
+    }
+    
+    .music-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+    }
+    
+    .music-controls button {
+        min-width: 70px;
+    }
+    
+    .music-volume {
+        margin-bottom: 20px;
+    }
+    
+    .music-volume label {
+        display: block;
+        margin-bottom: 8px;
+        color: #bbb;
+    }
+    
+    .music-volume input[type="range"] {
+        width: 100%;
+        margin: 0;
+    }
+    
+    .music-list {
+        display: grid;
+        gap: 8px;
+        text-align: left;
+    }
+    
+    .music-item {
+        padding: 10px 12px;
+        background: #101010;
+        border: 1px solid #222;
+        border-radius: 8px;
+        cursor: pointer;
+    }
+    
+    .music-item:hover {
+        border-color: var(--primary-blue);
+        background: rgba(55, 149, 255, 0.08);
+    }
+    
+    .music-item.active {
+        border-color: var(--primary-blue);
+        color: var(--primary-blue);
+        box-shadow: 0 0 12px rgba(55, 149, 255, 0.25);
+    }
         
     </style>
 </head>
@@ -795,6 +872,26 @@ h1.logo-graffiti[style*="font-size:100px"] {
 <div class="main-content" id="mainWrapper" style="display:none;">
     <div id="főoldal" class="tab-content active">
         <h1 class="logo-graffiti main-title">Blue Syndicate</h1>
+    
+        <div class="music-player">
+            <h3>Zenelejátszó</h3>
+            <div class="music-title" id="musicTitle">Nincs kiválasztva</div>
+    
+            <div class="music-controls">
+                <button onclick="prevTrack()">⏮</button>
+                <button onclick="toggleMusic()" id="playPauseBtn">▶</button>
+                <button onclick="nextTrack()">⏭</button>
+            </div>
+    
+            <div class="music-volume">
+                <label for="musicVolume">Hangerő</label>
+                <input type="range" id="musicVolume" min="0" max="1" step="0.01" value="0.5" oninput="setMusicVolume(this.value)">
+            </div>
+    
+            <div class="music-list" id="musicList"></div>
+    
+            <audio id="bgMusic"></audio>
+        </div>
     </div>
 
     <div id="dashboard" class="tab-content">
@@ -1778,10 +1875,127 @@ function flashBalanceDirection(isUp) {
     function escapeAttr(value) {
         return escapeHtml(value);
     }
-
+    const playlist = [
+        { title: "Track 1", src: "bluesyndicate.mp3" },
+        { title: "Track 2", src: "misfits.mp3" },
+        { title: "Track 3", src: "misfits2.mp3" }
+        { title: "Track 3", src: "bsgang.mp3" }
+    ];
+    
+    let currentTrackIndex = 0;
+    let musicInitialized = false;
+    
+    function initMusicPlayer() {
+        const audio = document.getElementById('bgMusic');
+        const list = document.getElementById('musicList');
+        const title = document.getElementById('musicTitle');
+    
+        if (!audio || !list || !title) return;
+    
+        list.innerHTML = playlist.map((track, index) => `
+            <div class="music-item ${index === currentTrackIndex ? 'active' : ''}" onclick="playTrack(${index})">
+                ${escapeHtml(track.title)}
+            </div>
+        `).join('');
+    
+        if (playlist.length > 0) {
+            audio.src = playlist[currentTrackIndex].src;
+            title.innerText = playlist[currentTrackIndex].title;
+        }
+    
+        audio.volume = Number(document.getElementById('musicVolume')?.value || 0.5);
+    
+        audio.onended = () => {
+            nextTrack();
+        };
+    
+        musicInitialized = true;
+    }
+    
+    function refreshMusicList() {
+        const list = document.getElementById('musicList');
+        const title = document.getElementById('musicTitle');
+        const audio = document.getElementById('bgMusic');
+        const btn = document.getElementById('playPauseBtn');
+    
+        if (!list || !title || !audio) return;
+    
+        list.innerHTML = playlist.map((track, index) => `
+            <div class="music-item ${index === currentTrackIndex ? 'active' : ''}" onclick="playTrack(${index})">
+                ${escapeHtml(track.title)}
+            </div>
+        `).join('');
+    
+        if (playlist[currentTrackIndex]) {
+            title.innerText = playlist[currentTrackIndex].title;
+            audio.src = playlist[currentTrackIndex].src;
+        }
+    
+        if (btn) {
+            btn.innerText = audio.paused ? '▶' : '⏸';
+        }
+    }
+    
+    function playTrack(index) {
+        const audio = document.getElementById('bgMusic');
+        if (!audio || !playlist[index]) return;
+    
+        currentTrackIndex = index;
+        audio.src = playlist[currentTrackIndex].src;
+        audio.play()
+            .then(() => {
+                refreshMusicList();
+            })
+            .catch((err) => {
+                console.warn("Lejátszás nem indult:", err);
+                refreshMusicList();
+            });
+    }
+    
+    function toggleMusic() {
+        const audio = document.getElementById('bgMusic');
+        const btn = document.getElementById('playPauseBtn');
+        if (!audio) return;
+    
+        if (!musicInitialized) {
+            initMusicPlayer();
+        }
+    
+        if (audio.paused) {
+            audio.play()
+                .then(() => {
+                    if (btn) btn.innerText = '⏸';
+                })
+                .catch((err) => {
+                    console.warn("Lejátszás nem indult:", err);
+                });
+        } else {
+            audio.pause();
+            if (btn) btn.innerText = '▶';
+        }
+    }
+    
+    function nextTrack() {
+        if (!playlist.length) return;
+        currentTrackIndex = (currentTrackIndex + 1) % playlist.length;
+        playTrack(currentTrackIndex);
+    }
+    
+    function prevTrack() {
+        if (!playlist.length) return;
+        currentTrackIndex = (currentTrackIndex - 1 + playlist.length) % playlist.length;
+        playTrack(currentTrackIndex);
+    }
+    
+    function setMusicVolume(value) {
+        const audio = document.getElementById('bgMusic');
+        if (!audio) return;
+        audio.volume = Number(value);
+    }
     window.onload = () => {
         buildMenu();
-
+        initMusicPlayer();
+    
         auth.onAuthStateChanged((user) => {
             if (user) {
                 closeModal();
