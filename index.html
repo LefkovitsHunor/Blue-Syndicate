@@ -1111,7 +1111,6 @@ h1.logo-graffiti[style*="font-size:100px"] {
         return i === -1 ? 999 : i; // ha nincs benne, menjen a végére
     }
 
-    .map((m) =>
     
     const firebaseConfig = {
         apiKey: "AIzaSyCbNX5_JbOcQ4F-QKTmiNR6qp7_9m_HQEE",
@@ -1600,8 +1599,7 @@ function flashBalanceDirection(isUp) {
             .map((m, i) => ({ ...m, _originalIndex: i }))
             .sort((a, b) => getRankIndex(a.rank) - getRankIndex(b.rank));
         
-        document.querySelector('#tabMembers tbody').innerHTML = sortedMembers.map((m, i) =>
-        
+        document.querySelector('#tabMembers tbody').innerHTML = sortedMembers.map((m) =>
             `<tr>
                 <td>${escapeHtml(m.nick || '-')}</td>
                 <td>${escapeHtml(m.ic || '')}</td>
@@ -1609,8 +1607,8 @@ function flashBalanceDirection(isUp) {
                 <td>${escapeHtml(m.dc || '')}</td>
                 <td>${escapeHtml(m.tel || '')}</td>
                 <td>
-                    <button onclick="openMemberModal(${i})">Szerk.</button>
-                    <button class="btn-danger" onclick="deleteMember(${i})">X</button>
+                    <button onclick="openMemberModal(${m._originalIndex})">Szerk.</button>
+                    <button class="btn-danger" onclick="deleteMember(${m._originalIndex})">X</button>
                 </td>
             </tr>`
         ).join('');
