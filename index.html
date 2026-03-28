@@ -855,6 +855,43 @@ h1.logo-graffiti[style*="font-size:100px"] {
         color: var(--primary-blue);
         box-shadow: 0 0 12px rgba(55, 149, 255, 0.25);
     }
+
+    .price-card {
+        background: #101010;
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    .price-card:hover {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 12px rgba(55, 149, 255, 0.2);
+    }
+    
+    .price-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .price-item {
+        font-weight: bold;
+        color: #fff;
+    }
+    
+    .price-value {
+        color: var(--primary-blue);
+        font-size: 14px;
+    }
+
+    #priceSearch {
+        max-width: 600px;
+        margin-bottom: 20px;
+    }
         
     </style>
 </head>
@@ -1065,7 +1102,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
             <input type="number" id="priceValue" placeholder="Mennyiért?">
             <button class="btn-primary" style="width:100%" onclick="addPriceItem()">Mentés</button>
         </div>
-    
+        <input type="text" id="priceSearch" placeholder="Keresés tárgyra vagy frakcióra..." oninput="render()">
         <div id="priceGroups"></div>
     </div>
     
@@ -1638,6 +1675,7 @@ function flashBalanceDirection(isUp) {
         console.log("RENDER DB =", JSON.parse(JSON.stringify(db)));
         const currentBalance = Number(db.balance || 0);
         const { daily, weekly, monthly } = calculateProfits();
+        const priceSearch = (document.getElementById('priceSearch')?.value || '').toLowerCase().trim();
     
         const totalBalEl = document.getElementById('totalBal');
         const statBalEl = document.getElementById('statBalance');
@@ -1839,66 +1877,72 @@ function flashBalanceDirection(isUp) {
         }
 
         let priceHtml = "";
-            (db.config.fractions || []).forEach(f => {
-                const group = (db.prices || []).filter(p => p.faction === f);
+
+        (db.config.fractions || []).forEach(f => {
+            const group = (db.prices || []).filter(p => {
+                const matchesFaction = p.faction === f;
+                const matchesSearch =
+                    !priceSearch ||
+                    (p.item || '').toLowerCase().includes(priceSearch) ||
+                    (p.faction || '').toLowerCase().includes(priceSearch);
             
-                if (group.length) {
-                    priceHtml += `
-                        <div class="dashboard-card">
-                            <h4>${escapeHtml(f)}</h4>
-                            <table>
-                                <thead>
-                                    <tr>
-                                        <th>Tárgy</th>
-                                        <th>Ár</th>
-                                        <th>Művelet</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${group.map(p => `
-                                        <tr>
-                                            <td>${escapeHtml(p.item)}</td>
-                                            <td>${Number(p.price || 0).toLocaleString()} Cs</td>
-                                            <td><button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">X</button></td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                }
+                return matchesFaction && matchesSearch;
             });
-            
-            const noFactionPrices = (db.prices || []).filter(p => !p.faction);
-            if (noFactionPrices.length) {
+        
+            if (group.length) {
                 priceHtml += `
                     <div class="dashboard-card">
-                        <h4>Egyéb</h4>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Tárgy</th>
-                                    <th>Ár</th>
-                                    <th>Művelet</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${noFactionPrices.map(p => `
-                                    <tr>
-                                        <td>${escapeHtml(p.item)}</td>
-                                        <td>${Number(p.price || 0).toLocaleString()} Cs</td>
-                                        <td><button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">X</button></td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
+                        <h4>${escapeHtml(f)}</h4>
+        
+                        ${group.map(p => `
+                            <div class="price-card">
+                                <div class="price-info">
+                                    <div class="price-item">${escapeHtml(p.item)}</div>
+                                    <div class="price-value">${Number(p.price || 0).toLocaleString()} Cs</div>
+                                </div>
+        
+                                <button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">X</button>
+                            </div>
+                        `).join('')}
+        
                     </div>
                 `;
             }
+        });
+            
+            const noFactionPrices = (db.prices || []).filter(p => {
+                const matchesFaction = !p.faction;
+                const matchesSearch =
+                    !priceSearch ||
+                    (p.item || '').toLowerCase().includes(priceSearch) ||
+                    (p.faction || '').toLowerCase().includes(priceSearch);
+            
+                return matchesFaction && matchesSearch;
+            });
+        
+                if (noFactionPrices.length) {
+                    priceHtml += `
+                        <div class="dashboard-card">
+                            <h4>Egyéb</h4>
+                
+                            ${noFactionPrices.map(p => `
+                                <div class="price-card">
+                                    <div class="price-info">
+                                        <div class="price-item">${escapeHtml(p.item)}</div>
+                                        <div class="price-value">${Number(p.price || 0).toLocaleString()} Cs</div>
+                                    </div>
+                
+                                    <button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">X</button>
+                                </div>
+                            `).join('')}
+                
+                        </div>
+                    `;
+                }
             
             const priceGroupsEl = document.getElementById('priceGroups');
             if (priceGroupsEl) {
-                priceGroupsEl.innerHTML = priceHtml || `<p class="muted">Nincs elmentett árlista.</p>`;
+                priceGroupsEl.innerHTML = priceHtml || `<p class="muted">Nincs találat a keresésre.</p>`;
             }
         
         document.getElementById('phGroups').innerHTML = phHtml || `<p class="muted">Nincs elmentett kontakt.</p>`;
