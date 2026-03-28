@@ -1878,7 +1878,7 @@ function flashBalanceDirection(isUp) {
     const playlist = [
         { title: "Blue Syndicate", src: "bluesyndicate.mp3" },
         { title: "MIsfits", src: "misfits.mp3" },
-        { title: "Misfits 2", src: "misfits2.mp3" }
+        { title: "Misfits 2, src: "misfits2.mp3 "},
         { title: "BS Gang", src: "bsgang.mp3" }
     ];
     
@@ -2008,57 +2008,6 @@ function flashBalanceDirection(isUp) {
             }
         });
     };
-
-    function flashBalanceDirection(isUp) {
-    const totalBalEl = document.getElementById('totalBal');
-    const statBalEl = document.getElementById('statBalance');
-
-    const addClass = isUp ? 'balance-up' : 'balance-down';
-    const removeClass = isUp ? 'balance-down' : 'balance-up';
-
-    [totalBalEl, statBalEl].forEach(el => {
-        if (!el) return;
-        el.classList.remove(removeClass);
-        el.classList.remove(addClass);
-        void el.offsetWidth;
-        el.classList.add(addClass);
-
-        setTimeout(() => {
-            el.classList.remove(addClass);
-        }, 700);
-    });
-}
-
-    function playBalanceSound(isUp) {
-        try {
-            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-            if (!AudioContextClass) return;
-    
-            const ctx = new AudioContextClass();
-            const oscillator = ctx.createOscillator();
-            const gainNode = ctx.createGain();
-    
-            oscillator.type = "sine";
-            oscillator.frequency.setValueAtTime(isUp ? 880 : 220, ctx.currentTime);
-            oscillator.frequency.exponentialRampToValueAtTime(isUp ? 1320 : 140, ctx.currentTime + 0.12);
-    
-            gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
-            gainNode.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.01);
-            gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.18);
-    
-            oscillator.connect(gainNode);
-            gainNode.connect(ctx.destination);
-    
-            oscillator.start(ctx.currentTime);
-            oscillator.stop(ctx.currentTime + 0.18);
-    
-            setTimeout(() => {
-                if (ctx && typeof ctx.close === "function") ctx.close();
-            }, 250);
-        } catch (e) {
-            console.warn("Hang lejátszása nem sikerült:", e);
-        }
-    }
 
     function addToCart() {
         const sel = document.getElementById('selAccType');
