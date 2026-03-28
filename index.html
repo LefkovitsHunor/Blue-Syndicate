@@ -1132,6 +1132,61 @@ h1.logo-graffiti[style*="font-size:100px"] {
         </table>
     </div>
 
+    <div id="admin-panel" class="tab-content">
+        <div class="section-head">
+            <h2>Admin Panel</h2>
+        </div>
+    
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h3>Aktuális hozzáférés</h3>
+                <p><strong>Email:</strong> <span id="currentUserEmailText">-</span></p>
+                <p><strong>Rang:</strong> <span id="currentUserRoleText">Rookie</span></p>
+            </div>
+    
+            <div class="dashboard-card">
+                <h3>Email alapú jogkezelés</h3>
+                <input type="email" id="permEmail" placeholder="Felhasználó email címe">
+    
+                <select id="permRole">
+                    <option value="Prodigy">Prodigy</option>
+                    <option value="Organizer">Organizer</option>
+                    <option value="Operator">Operator</option>
+                    <option value="Specialist">Specialist</option>
+                    <option value="Enforcer">Enforcer</option>
+                    <option value="Hunter">Hunter</option>
+                    <option value="Rebel">Rebel</option>
+                    <option value="Outsider">Outsider</option>
+                    <option value="Rookie">Rookie</option>
+                </select>
+    
+                <button class="btn-primary" style="width:100%" onclick="addPermissionUser()">Jog mentése</button>
+    
+                <table style="margin-top:15px;">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Rang</th>
+                            <th>Művelet</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUsersTable"></tbody>
+                </table>
+            </div>
+    
+            <div class="dashboard-card">
+                <h3>Menüpont láthatóság</h3>
+                <div id="adminTabVisibility"></div>
+            </div>
+    
+            <div class="dashboard-card danger-zone">
+                <h3 style="color:#ff3131;">Admin műveletek</h3>
+                <p class="muted">Teljes reset csak teljes adminnak.</p>
+                <button class="btn-danger" style="width:100%" onclick="openResetModal()">TELJES RESET</button>
+            </div>
+        </div>
+    </div>
+    
     <div id="fekete-lista" class="tab-content">
         <h2>Blacklist</h2>
         <div class="dashboard-card">
@@ -1159,7 +1214,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
 <script>
-    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "fekete-lista"];
+    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "fekete-lista", "admin-panel"];
 
     const RANK_ORDER = [
         "Prodigy",
@@ -1200,6 +1255,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
     let selectedAccMembers = new Set();
     let isSyncReady = false;
     let lastRenderedBalance = 0;
+    let currentUserEmail = "";
+    let currentUserRole = "Rookie";
 
     function getDefaultDb() {
         return {
@@ -1218,10 +1275,174 @@ h1.logo-graffiti[style*="font-size:100px"] {
             contacts: [],
             blacklist: [],
             accCart: [],
-            prices: []
+            prices: [],
+            permissions: {
+                users: []
+            },
+            hiddenTabs: []
         };
     }
 
+    function getFullAdminRoles() {
+        return ["Prodigy", "Organizer", "Operator"];
+    }
+    
+    function getAccountingRoles() {
+        return ["Prodigy", "Organizer", "Operator", "Specialist"];
+    }
+    
+    function getRoleByEmail(email) {
+        if (!email) return "Rookie";
+    
+        const superAdmins = [
+            "bluesyndicatebs@gmail.com",
+            "lefkovitshunor@gmail.com"
+        ];
+    
+        const normalizedEmail = email.toLowerCase().trim();
+    
+        if (superAdmins.includes(normalizedEmail)) {
+            return "Prodigy";
+        }
+    
+        const users = Array.isArray(db.permissions?.users) ? db.permissions.users : [];
+        const found = users.find(u => (u.email || "").toLowerCase() === normalizedEmail);
+    
+        return found?.role || "Rookie";
+    }
+    
+    function isFullAdmin() {
+        return getFullAdminRoles().includes(currentUserRole);
+    }
+    
+    function canUseAccounting() {
+        return getAccountingRoles().includes(currentUserRole);
+    }
+    
+    function canSeeTab(tabId) {
+        const hiddenTabs = Array.isArray(db.hiddenTabs) ? db.hiddenTabs : [];
+    
+        if (hiddenTabs.includes(tabId) && !isFullAdmin()) return false;
+    
+        if (tabId === "admin-panel") return isFullAdmin();
+    
+        if (tabId === "főoldal") return true;
+        if (tabId === "dashboard") return true;
+        if (tabId === "taglista") return true;
+    
+        if (tabId === "könyvelés") return canUseAccounting();
+        if (tabId === "fizetés") return canUseAccounting();
+    
+        if (tabId === "üzletek") return true;
+        if (tabId === "árak") return true;
+        if (tabId === "pénzmozgás") return true;
+        if (tabId === "telefonkönyv") return true;
+        if (tabId === "fekete-lista") return true;
+    
+        return true;
+    }
+    
+    function requireFullAdmin() {
+        if (!isFullAdmin()) {
+            customAlert("Ehhez nincs jogosultságod.");
+            return false;
+        }
+        return true;
+    }
+    
+    function requireAccountingAccess() {
+        if (!canUseAccounting()) {
+            customAlert("Ehhez nincs jogosultságod.");
+            return false;
+        }
+        return true;
+    }
+    
+    function getVisibleMenu() {
+        return MENU.filter(tab => canSeeTab(tab));
+    }
+    
+    function addPermissionUser() {
+        if (!requireFullAdmin()) return;
+    
+        const email = document.getElementById('permEmail').value.trim().toLowerCase();
+        const role = document.getElementById('permRole').value.trim();
+    
+        if (!email || !role) {
+            return customAlert("Adj meg email címet és rangot.");
+        }
+    
+        if (!db.permissions) db.permissions = { users: [] };
+        if (!Array.isArray(db.permissions.users)) db.permissions.users = [];
+    
+        const existingIndex = db.permissions.users.findIndex(
+            u => (u.email || "").toLowerCase() === email
+        );
+    
+        if (existingIndex > -1) {
+            db.permissions.users[existingIndex].role = role;
+        } else {
+            db.permissions.users.push({ email, role });
+        }
+    
+        document.getElementById('permEmail').value = "";
+        save();
+    }
+    
+    function deletePermissionUser(index) {
+        if (!requireFullAdmin()) return;
+        if (!Array.isArray(db.permissions?.users)) return;
+        db.permissions.users.splice(index, 1);
+        save();
+    }
+    
+    function toggleHiddenTab(tabId) {
+        if (!requireFullAdmin()) return;
+    
+        if (!Array.isArray(db.hiddenTabs)) db.hiddenTabs = [];
+    
+        const i = db.hiddenTabs.indexOf(tabId);
+        if (i > -1) db.hiddenTabs.splice(i, 1);
+        else db.hiddenTabs.push(tabId);
+    
+        save();
+    }
+    
+    function renderAdminPanel() {
+        const userTable = document.getElementById('adminUsersTable');
+        const tabsWrap = document.getElementById('adminTabVisibility');
+        const currentRoleEl = document.getElementById('currentUserRoleText');
+        const currentEmailEl = document.getElementById('currentUserEmailText');
+    
+        if (currentRoleEl) currentRoleEl.innerText = currentUserRole;
+        if (currentEmailEl) currentEmailEl.innerText = currentUserEmail || "-";
+    
+        if (!userTable || !tabsWrap) return;
+    
+        const users = Array.isArray(db.permissions?.users) ? db.permissions.users : [];
+        const hiddenTabs = Array.isArray(db.hiddenTabs) ? db.hiddenTabs : [];
+        const manageableTabs = MENU.filter(tab => tab !== "főoldal" && tab !== "admin-panel");
+    
+        userTable.innerHTML = users.map((u, i) => `
+            <tr>
+                <td>${escapeHtml(u.email || "")}</td>
+                <td>${escapeHtml(u.role || "")}</td>
+                <td><button class="btn-danger" onclick="deletePermissionUser(${i})">X</button></td>
+            </tr>
+        `).join('') || `<tr><td colspan="3" class="muted">Nincs hozzáadott jogosultság</td></tr>`;
+    
+        tabsWrap.innerHTML = manageableTabs.map(tab => {
+            const hidden = hiddenTabs.includes(tab);
+            return `
+                <div class="member-card ${hidden ? '' : 'selected'}" onclick="toggleHiddenTab('${tab}')">
+                    ${escapeHtml(tab.toUpperCase())}
+                    <br>
+                    <small>${hidden ? 'REJTETT' : 'LÁTHATÓ'}</small>
+                </div>
+            `;
+        }).join('');
+    }
+    
     function nowString() {
         return new Date().toLocaleString('hu-HU');
     }
@@ -1278,6 +1499,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function addConfig(key, id) {
+        if (!requireFullAdmin()) return;
         const val = document.getElementById(id).value.trim();
         if (!val) return;
 
@@ -1288,6 +1510,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function addAccType() {
+        if (!requireFullAdmin()) return;
         const n = document.getElementById('inAccName').value.trim();
         const p = parseInt(document.getElementById('inAccPrice').value, 10);
 
@@ -1300,6 +1523,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function openMemberModal(idx = -1) {
+        if (!isFullAdmin()) return customAlert("Ehhez nincs jogosultságod.");
         const m = idx > -1 ? db.members[idx] : { ic: '', rank: '', dc: '', tel: '', pay: 0, reqPay: null, payDate: null, isDone: false };
 
         showModal(`
@@ -1315,6 +1539,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function confirmMember(idx) {
+        if (!requireFullAdmin()) return;
         const ic = document.getElementById('mIC').value.trim();
         if (!ic) return customAlert("Az IC név kötelező.");
 
@@ -1339,6 +1564,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function deleteMember(idx) {
+        if (!requireFullAdmin()) return;
         if (!db.members[idx]) return;
         customConfirm(`Biztosan törlöd: ${escapeHtml(db.members[idx].ic)}?`, () => {
             db.members.splice(idx, 1);
@@ -1353,6 +1579,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function finalizeAccounting() {
+        if (!requireAccountingAccess()) return;
         if (selectedAccMembers.size === 0) {
             return customAlert("Válassz tagokat!");
         }
@@ -1408,6 +1635,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function processTrade() {
+        if (!requireFullAdmin()) return;
         const p = document.getElementById('trPartner').value.trim();
         const a = parseInt(document.getElementById('trAmt').value, 10);
         const item = document.getElementById('selTrItem').value || '-';
@@ -1442,6 +1670,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function addContact() {
+        if (!requireFullAdmin()) return;
         const n = document.getElementById('phName').value.trim();
         const s = document.getElementById('phNum').value.trim();
         const f = document.getElementById('phFracSelect').value || '';
@@ -1456,12 +1685,14 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function deleteContact(idx) {
+        if (!requireFullAdmin()) return;
         if (idx < 0 || idx >= db.contacts.length) return;
         db.contacts.splice(idx, 1);
         save();
     }
 
     function cashOp(m) {
+        if (!requireFullAdmin()) return;
         const a = parseInt(document.getElementById('cashAmt').value, 10);
         const note = document.getElementById('cashNote').value.trim() || (m === 'BE' ? 'Befizetés' : 'Kivétel');
 
@@ -1496,6 +1727,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function payOut(idx) {
+        if (!requireAccountingAccess()) return;
         const m = db.members[idx];
         if (!m || !m.pay || m.pay <= 0) return customAlert("Nincs mit kifizetni!");
 
@@ -1521,6 +1753,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function addBL() {
+        if (!requireFullAdmin()) return;
         const n = document.getElementById('blN').value.trim();
         const i = document.getElementById('blI').value.trim();
 
@@ -1534,22 +1767,26 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function deleteBL(idx) {
+        if (!requireFullAdmin()) return;
         if (idx < 0 || idx >= db.blacklist.length) return;
         db.blacklist.splice(idx, 1);
         save();
     }
 
     function removeTradeItem(i) {
+        if (!requireFullAdmin()) return;
         db.config.tradeItems.splice(i, 1);
         save();
     }
 
     function removeFraction(i) {
+        if (!requireFullAdmin()) return;
         db.config.fractions.splice(i, 1);
         save();
     }
 
     function removeAccType(i) {
+        if (!requireFullAdmin()) return;
         db.config.accTypes.splice(i, 1);
         save();
     }
@@ -1704,6 +1941,9 @@ function flashBalanceDirection(isUp) {
         lastRenderedBalance = currentBalance;
         
         document.getElementById('statMembers').innerText = (db.members || []).length;
+        document.querySelectorAll('.danger-zone').forEach(el => {
+            el.style.display = isFullAdmin() ? '' : 'none';
+        });
 
         if (statDailyProfitEl) {
             statDailyProfitEl.innerText = daily.toLocaleString() + " Cs";
@@ -1954,6 +2194,7 @@ function flashBalanceDirection(isUp) {
                 <td><button class="btn-danger" onclick="deleteBL(${i})">X</button></td>
             </tr>`
         ).join('');
+        renderAdminPanel();
         renderCart();
     }
 
@@ -1988,6 +2229,7 @@ function flashBalanceDirection(isUp) {
     }
 
     function openResetModal() {
+        if (!requireFullAdmin()) return;
         document.getElementById('resetModal').style.display = 'flex';
     }
 
@@ -1996,6 +2238,8 @@ function flashBalanceDirection(isUp) {
     }
 
     function hardReset() {
+        if (!requireFullAdmin()) return;
+        
         db = getDefaultDb();
         selectedAccMembers.clear();
 
@@ -2012,11 +2256,21 @@ function flashBalanceDirection(isUp) {
 
     function handleLoginPermissions(email) {
         console.log("Belépve mint:", email);
-
+    
+        currentUserEmail = email || "";
+        currentUserRole = getRoleByEmail(currentUserEmail);
+    
         document.getElementById('siteHeader').style.display = 'flex';
         document.getElementById('mainWrapper').style.display = 'block';
-
-        showTab('főoldal');
+    
+        buildMenu();
+    
+        if (canSeeTab('főoldal')) {
+            showTab('főoldal');
+        } else {
+            const firstVisible = getVisibleMenu()[0];
+            if (firstVisible) showTab(firstVisible);
+        }
     }
 
     function setupRealtimeSync() {
@@ -2042,12 +2296,17 @@ function flashBalanceDirection(isUp) {
                 contacts: Array.isArray(data.contacts) ? data.contacts : [],
                 blacklist: Array.isArray(data.blacklist) ? data.blacklist : [],
                 accCart: Array.isArray(data.accCart) ? data.accCart : [],
-                prices: Array.isArray(data.prices) ? data.prices : []
+                prices: Array.isArray(data.prices) ? data.prices : [],
+                permissions: {
+                    users: Array.isArray(data.permissions?.users) ? data.permissions.users : []
+                },
+                hiddenTabs: Array.isArray(data.hiddenTabs) ? data.hiddenTabs : []
             };
         } else {
             db = getDefaultDb();
         }
-
+        currentUserRole = getRoleByEmail(currentUserEmail);
+        buildMenu();
         autoCleanup();
         render();
     }, (error) => {
@@ -2088,7 +2347,9 @@ function flashBalanceDirection(isUp) {
     };
 
     function buildMenu() {
-        document.getElementById('mainNav').innerHTML = MENU.map(m =>
+        const visibleMenu = getVisibleMenu();
+    
+        document.getElementById('mainNav').innerHTML = visibleMenu.map(m =>
             `<button onclick="showTab('${m}')" id="btn-${m}">${m.toUpperCase()}</button>`
         ).join('') + `<button onclick="logout()">LOGOUT</button>`;
     }
@@ -2240,6 +2501,7 @@ function flashBalanceDirection(isUp) {
     };
 
     function addPriceItem() {
+        if (!requireFullAdmin()) return;
         const faction = document.getElementById('priceFaction').value.trim();
         const item = document.getElementById('priceItem').value.trim();
         const price = parseInt(document.getElementById('priceValue').value, 10);
@@ -2262,6 +2524,7 @@ function flashBalanceDirection(isUp) {
     }
     
     function deletePriceItem(index) {
+        if (!requireFullAdmin()) return;
         if (!Array.isArray(db.prices)) db.prices = [];
         if (index < 0 || index >= db.prices.length) return;
     
@@ -2270,6 +2533,7 @@ function flashBalanceDirection(isUp) {
     }
     
     function addToCart() {
+        if (!requireAccountingAccess()) return;
         const sel = document.getElementById('selAccType');
         const price = parseInt(sel.value, 10);
         const qty = parseInt(document.getElementById('inAccQty').value, 10);
@@ -2336,6 +2600,7 @@ function flashBalanceDirection(isUp) {
 }
 
     function finalizeCart() {
+        if (!requireAccountingAccess()) return;
         if (!Array.isArray(db.accCart) || db.accCart.length === 0) {
             return customAlert("A kosár üres!");
         }
