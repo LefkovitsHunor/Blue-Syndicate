@@ -1391,23 +1391,6 @@ h1.logo-graffiti[style*="font-size:100px"] {
         </div>
     </div>
     
-        <div class="dashboard-card" style="max-width:700px; margin-bottom:20px;">
-            <input type="date" id="calendarDate">
-            <input type="text" id="calendarTitle" placeholder="Esemény címe">
-            <textarea id="calendarDesc" placeholder="Ide írd be az esemény teljes szövegét..." rows="4"></textarea>
-    
-            <select id="calendarPriority">
-                <option value="normal">Normál</option>
-                <option value="fontos">Fontos</option>
-                <option value="sürgős">Sürgős</option>
-            </select>
-    
-            <button class="btn-primary" style="width:100%" onclick="addCalendarEvent()">Esemény mentése</button>
-        </div>
-    
-        <div id="calendarList"></div>
-    </div>
-    
     <div id="fekete-lista" class="tab-content">
         <h2>Blacklist</h2>
         <div class="dashboard-card">
@@ -2869,37 +2852,6 @@ function flashBalanceDirection(isUp) {
     
         db.accCart = [];
         selectedAccMembers.clear();
-        save();
-    }
-
-    function addCalendarEvent() {
-        if (!requireFullAdmin()) return;
-    
-        const date = document.getElementById('calendarDate').value;
-        const title = document.getElementById('calendarTitle').value.trim();
-        const desc = document.getElementById('calendarDesc').value.trim();
-        const priority = document.getElementById('calendarPriority').value;
-    
-        if (!date || !title || !desc) {
-            return customAlert("Töltsd ki a dátumot, címet és leírást.");
-        }
-    
-        if (!Array.isArray(db.calendarEvents)) db.calendarEvents = [];
-    
-        db.calendarEvents.push({
-            id: Date.now(),
-            date,
-            title,
-            desc,
-            priority,
-            createdAt: Date.now()
-        });
-    
-        document.getElementById('calendarDate').value = "";
-        document.getElementById('calendarTitle').value = "";
-        document.getElementById('calendarDesc').value = "";
-        document.getElementById('calendarPriority').value = "normal";
-    
         save();
     }
 
