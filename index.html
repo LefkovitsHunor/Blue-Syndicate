@@ -959,6 +959,116 @@ h1.logo-graffiti[style*="font-size:100px"] {
         border-color: var(--neon-red);
         box-shadow: 0 0 10px rgba(255, 49, 49, 0.2);
     }
+
+    .calendar-weekdays {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+    
+    .calendar-weekdays div {
+        text-align: center;
+        font-weight: bold;
+        color: var(--primary-blue);
+        padding: 10px 0;
+        background: #0d0d0d;
+        border: 1px solid #222;
+        border-radius: 10px;
+        font-size: 13px;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 8px;
+    }
+    
+    .calendar-day {
+        min-height: 120px;
+        background: #101010;
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        padding: 10px;
+        cursor: pointer;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    
+    .calendar-day:hover {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 14px rgba(55, 149, 255, 0.18);
+    }
+    
+    .calendar-day.other-month {
+        opacity: 0.35;
+    }
+    
+    .calendar-day.today {
+        border-color: var(--neon-green);
+        box-shadow: 0 0 14px rgba(57, 255, 20, 0.2);
+    }
+    
+    .calendar-day-number {
+        font-weight: bold;
+        font-size: 16px;
+        color: #fff;
+    }
+    
+    .calendar-day-events {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 4px;
+    }
+    
+    .calendar-event-chip {
+        font-size: 11px;
+        padding: 5px 7px;
+        border-radius: 8px;
+        background: rgba(55, 149, 255, 0.12);
+        border: 1px solid rgba(55, 149, 255, 0.25);
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    
+    .calendar-event-chip.fontos {
+        border-color: rgba(255, 210, 77, 0.45);
+        color: #ffd24d;
+    }
+    
+    .calendar-event-chip.surgos {
+        border-color: rgba(255, 49, 49, 0.5);
+        color: #ff7b7b;
+    }
+    
+    @media (max-width: 900px) {
+        .calendar-grid,
+        .calendar-weekdays {
+            grid-template-columns: repeat(7, minmax(80px, 1fr));
+            overflow-x: auto;
+        }
+    }
+    
+    @media (max-width: 640px) {
+        .calendar-day {
+            min-height: 95px;
+            padding: 8px;
+        }
+    
+        .calendar-day-number {
+            font-size: 14px;
+        }
+    
+        .calendar-event-chip {
+            font-size: 10px;
+            padding: 4px 6px;
+        }
+    }
         
     </style>
 </head>
@@ -1256,8 +1366,30 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
     <div id="naptár" class="tab-content">
         <div class="section-head">
-            <h2>Naptár / Emlékeztetők</h2>
+            <h2>Naptár</h2>
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <button onclick="changeCalendarMonth(-1)">◀ Előző</button>
+                <button onclick="goToToday()" class="btn-primary">Ma</button>
+                <button onclick="changeCalendarMonth(1)">Következő ▶</button>
+            </div>
         </div>
+    
+        <div class="dashboard-card" style="margin-bottom:20px;">
+            <h3 id="calendarMonthTitle" style="margin-top:0;"></h3>
+    
+            <div class="calendar-weekdays">
+                <div>H</div>
+                <div>K</div>
+                <div>SZE</div>
+                <div>CS</div>
+                <div>P</div>
+                <div>SZO</div>
+                <div>V</div>
+            </div>
+    
+            <div id="calendarGrid" class="calendar-grid"></div>
+        </div>
+    </div>
     
         <div class="dashboard-card" style="max-width:700px; margin-bottom:20px;">
             <input type="date" id="calendarDate">
@@ -1346,6 +1478,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     let lastRenderedBalance = 0;
     let currentUserEmail = "";
     let currentUserRole = "Rookie";
+    let currentCalendarDate = new Date();
 
     function getDefaultDb() {
         return {
@@ -2285,54 +2418,11 @@ function flashBalanceDirection(isUp) {
                 <td><button class="btn-danger" onclick="deleteBL(${i})">X</button></td>
             </tr>`
         ).join('');
-
-        const calendarListEl = document.getElementById('calendarList');
-        if (calendarListEl) {
-            const events = Array.isArray(db.calendarEvents) ? [...db.calendarEvents] : [];
-        
-            events.sort((a, b) => {
-                const dateA = new Date(a.date).getTime();
-                const dateB = new Date(b.date).getTime();
-                return dateA - dateB;
-            });
-        
-            calendarListEl.innerHTML = events.map(event => {
-                let priorityClass = "calendar-normal";
-                let priorityText = "Normál";
-        
-                if (event.priority === "fontos") {
-                    priorityClass = "calendar-fontos";
-                    priorityText = "Fontos";
-                }
-        
-                if (event.priority === "sürgős") {
-                    priorityClass = "calendar-surgos";
-                    priorityText = "Sürgős";
-                }
-        
-                return `
-                    <div class="calendar-item">
-                        <div class="calendar-item-header">
-                            <div>
-                                <div class="calendar-item-title">${escapeHtml(event.title || "")}</div>
-                                <div class="calendar-item-date">${escapeHtml(event.date || "")}</div>
-                            </div>
-        
-                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-                                <span class="calendar-badge ${priorityClass}">${priorityText}</span>
-                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteCalendarEvent(${event.id})">X</button>` : ``}
-                            </div>
-                        </div>
-        
-                        <div class="calendar-item-desc">${escapeHtml(event.desc || "")}</div>
-                    </div>
-                `;
-            }).join('') || `<p class="muted">Nincs még felvett esemény.</p>`;
+            
+            renderAdminPanel();
+            renderCalendar();
+            renderCart();
         }
-        
-        renderAdminPanel();
-        renderCart();
-    }
 
     function showTab(id) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -2819,6 +2909,180 @@ function flashBalanceDirection(isUp) {
         if (!Array.isArray(db.calendarEvents)) db.calendarEvents = [];
         db.calendarEvents = db.calendarEvents.filter(event => event.id !== id);
         save();
+    }
+
+    function formatDateToYMD(date) {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+    }
+    
+    function getMonthNameHu(monthIndex) {
+        const months = [
+            "Január", "Február", "Március", "Április", "Május", "Június",
+            "Július", "Augusztus", "Szeptember", "Október", "November", "December"
+        ];
+        return months[monthIndex] || "";
+    }
+    
+    function changeCalendarMonth(diff) {
+        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + diff);
+        render();
+    }
+    
+    function goToToday() {
+        currentCalendarDate = new Date();
+        render();
+    }
+    
+    function openCalendarDayModal(dateStr) {
+        const dayEvents = (Array.isArray(db.calendarEvents) ? db.calendarEvents : [])
+            .filter(e => e.date === dateStr);
+    
+        showModal(`
+            <h3>Esemény - ${escapeHtml(dateStr)}</h3>
+    
+            ${isFullAdmin() ? `
+                <input type="text" id="calendarModalTitle" placeholder="Esemény címe">
+                <textarea id="calendarModalDesc" placeholder="Leírás..." rows="4"></textarea>
+    
+                <select id="calendarModalPriority">
+                    <option value="normal">Normál</option>
+                    <option value="fontos">Fontos</option>
+                    <option value="sürgős">Sürgős</option>
+                </select>
+    
+                <button class="btn-primary" style="width:100%; margin-bottom:12px;" onclick="addCalendarEventFromModal('${dateStr}')">
+                    Esemény mentése
+                </button>
+            ` : ''}
+    
+            <div style="text-align:left; max-height:250px; overflow-y:auto;">
+                ${
+                    dayEvents.length
+                    ? dayEvents.map(event => `
+                        <div style="padding:10px; border:1px solid #222; border-radius:10px; margin-bottom:8px; background:#0d0d0d;">
+                            <div style="font-weight:bold; margin-bottom:6px;">${escapeHtml(event.title || '')}</div>
+                            <div style="color:#bbb; white-space:pre-line; margin-bottom:8px;">${escapeHtml(event.desc || '')}</div>
+                            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+                                <small style="color:#888;">${escapeHtml(event.priority || 'normal')}</small>
+                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteCalendarEvent(${event.id}); closeModal();">Törlés</button>` : ''}
+                            </div>
+                        </div>
+                    `).join('')
+                    : `<p class="muted">Erre a napra nincs esemény.</p>`
+                }
+            </div>
+    
+            <button class="btn-danger" style="width:100%; margin-top:10px;" onclick="closeModal()">Bezárás</button>
+        `);
+    }
+    
+    function addCalendarEventFromModal(dateStr) {
+        if (!requireFullAdmin()) return;
+    
+        const title = document.getElementById('calendarModalTitle')?.value.trim();
+        const desc = document.getElementById('calendarModalDesc')?.value.trim();
+        const priority = document.getElementById('calendarModalPriority')?.value || 'normal';
+    
+        if (!title || !desc) {
+            return customAlert("Töltsd ki a címet és a leírást.");
+        }
+    
+        if (!Array.isArray(db.calendarEvents)) db.calendarEvents = [];
+    
+        db.calendarEvents.push({
+            id: Date.now(),
+            date: dateStr,
+            title,
+            desc,
+            priority,
+            createdAt: Date.now()
+        });
+    
+        save();
+        closeModal();
+    }
+    
+    function renderCalendar() {
+        const monthTitleEl = document.getElementById('calendarMonthTitle');
+        const gridEl = document.getElementById('calendarGrid');
+    
+        if (!monthTitleEl || !gridEl) return;
+    
+        const year = currentCalendarDate.getFullYear();
+        const month = currentCalendarDate.getMonth();
+    
+        monthTitleEl.innerText = `${getMonthNameHu(month)} ${year}`;
+    
+        const firstDayOfMonth = new Date(year, month, 1);
+        const lastDayOfMonth = new Date(year, month + 1, 0);
+    
+        let startWeekday = firstDayOfMonth.getDay();
+        startWeekday = startWeekday === 0 ? 6 : startWeekday - 1;
+    
+        const daysInMonth = lastDayOfMonth.getDate();
+    
+        const prevMonthLastDay = new Date(year, month, 0).getDate();
+        const cells = [];
+    
+        for (let i = startWeekday - 1; i >= 0; i--) {
+            const dayNum = prevMonthLastDay - i;
+            const dateObj = new Date(year, month - 1, dayNum);
+            cells.push({
+                date: formatDateToYMD(dateObj),
+                day: dayNum,
+                currentMonth: false
+            });
+        }
+    
+        for (let day = 1; day <= daysInMonth; day++) {
+            const dateObj = new Date(year, month, day);
+            cells.push({
+                date: formatDateToYMD(dateObj),
+                day,
+                currentMonth: true
+            });
+        }
+    
+        const remaining = 42 - cells.length;
+        for (let day = 1; day <= remaining; day++) {
+            const dateObj = new Date(year, month + 1, day);
+            cells.push({
+                date: formatDateToYMD(dateObj),
+                day,
+                currentMonth: false
+            });
+        }
+    
+        const todayStr = formatDateToYMD(new Date());
+        const allEvents = Array.isArray(db.calendarEvents) ? db.calendarEvents : [];
+    
+        gridEl.innerHTML = cells.map(cell => {
+            const events = allEvents.filter(e => e.date === cell.date).slice(0, 3);
+    
+            return `
+                <div class="calendar-day ${cell.currentMonth ? '' : 'other-month'} ${cell.date === todayStr ? 'today' : ''}"
+                     onclick="openCalendarDayModal('${cell.date}')">
+                    <div class="calendar-day-number">${cell.day}</div>
+                    <div class="calendar-day-events">
+                        ${events.map(event => `
+                            <div class="calendar-event-chip ${
+                                event.priority === 'fontos' ? 'fontos' :
+                                event.priority === 'sürgős' ? 'surgos' : ''
+                            }">
+                                ${escapeHtml(event.title || '')}
+                            </div>
+                        `).join('')}
+                        ${allEvents.filter(e => e.date === cell.date).length > 3
+                            ? `<div class="calendar-event-chip">+ további</div>`
+                            : ''
+                        }
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
     
 </script>
