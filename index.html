@@ -892,6 +892,73 @@ h1.logo-graffiti[style*="font-size:100px"] {
         max-width: 600px;
         margin-bottom: 20px;
     }
+
+    .calendar-item {
+        background: #101010;
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        padding: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 0 12px rgba(0,0,0,0.25);
+    }
+    
+    .calendar-item:hover {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 14px rgba(55, 149, 255, 0.18);
+    }
+    
+    .calendar-item-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .calendar-item-title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #fff;
+    }
+    
+    .calendar-item-date {
+        color: var(--primary-blue);
+        font-size: 14px;
+    }
+    
+    .calendar-item-desc {
+        color: #cfcfcf;
+        white-space: pre-line;
+        line-height: 1.5;
+        margin-top: 8px;
+    }
+    
+    .calendar-badge {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: bold;
+        border: 1px solid #333;
+    }
+    
+    .calendar-normal {
+        color: #aaa;
+        border-color: #444;
+    }
+    
+    .calendar-fontos {
+        color: #ffd24d;
+        border-color: #ffd24d;
+        box-shadow: 0 0 10px rgba(255, 210, 77, 0.15);
+    }
+    
+    .calendar-surgos {
+        color: var(--neon-red);
+        border-color: var(--neon-red);
+        box-shadow: 0 0 10px rgba(255, 49, 49, 0.2);
+    }
         
     </style>
 </head>
@@ -1186,6 +1253,28 @@ h1.logo-graffiti[style*="font-size:100px"] {
             </div>
         </div>
     </div>
+
+    <div id="naptár" class="tab-content">
+        <div class="section-head">
+            <h2>Naptár / Emlékeztetők</h2>
+        </div>
+    
+        <div class="dashboard-card" style="max-width:700px; margin-bottom:20px;">
+            <input type="date" id="calendarDate">
+            <input type="text" id="calendarTitle" placeholder="Esemény címe">
+            <textarea id="calendarDesc" placeholder="Ide írd be az esemény teljes szövegét..." rows="4"></textarea>
+    
+            <select id="calendarPriority">
+                <option value="normal">Normál</option>
+                <option value="fontos">Fontos</option>
+                <option value="sürgős">Sürgős</option>
+            </select>
+    
+            <button class="btn-primary" style="width:100%" onclick="addCalendarEvent()">Esemény mentése</button>
+        </div>
+    
+        <div id="calendarList"></div>
+    </div>
     
     <div id="fekete-lista" class="tab-content">
         <h2>Blacklist</h2>
@@ -1214,7 +1303,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
 <script>
-    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "fekete-lista", "admin-panel"];
+    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "naptár", "fekete-lista", "admin-panel"];
 
     const RANK_ORDER = [
         "Prodigy",
@@ -1276,6 +1365,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
             blacklist: [],
             accCart: [],
             prices: [],
+            calendarEvents: [],
             permissions: {
                 users: []
             },
@@ -1337,6 +1427,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         if (tabId === "árak") return true;
         if (tabId === "pénzmozgás") return true;
         if (tabId === "telefonkönyv") return true;
+        if (tabId === "naptár") return true;
         if (tabId === "fekete-lista") return true;
     
         return true;
@@ -2194,6 +2285,51 @@ function flashBalanceDirection(isUp) {
                 <td><button class="btn-danger" onclick="deleteBL(${i})">X</button></td>
             </tr>`
         ).join('');
+
+        const calendarListEl = document.getElementById('calendarList');
+        if (calendarListEl) {
+            const events = Array.isArray(db.calendarEvents) ? [...db.calendarEvents] : [];
+        
+            events.sort((a, b) => {
+                const dateA = new Date(a.date).getTime();
+                const dateB = new Date(b.date).getTime();
+                return dateA - dateB;
+            });
+        
+            calendarListEl.innerHTML = events.map(event => {
+                let priorityClass = "calendar-normal";
+                let priorityText = "Normál";
+        
+                if (event.priority === "fontos") {
+                    priorityClass = "calendar-fontos";
+                    priorityText = "Fontos";
+                }
+        
+                if (event.priority === "sürgős") {
+                    priorityClass = "calendar-surgos";
+                    priorityText = "Sürgős";
+                }
+        
+                return `
+                    <div class="calendar-item">
+                        <div class="calendar-item-header">
+                            <div>
+                                <div class="calendar-item-title">${escapeHtml(event.title || "")}</div>
+                                <div class="calendar-item-date">${escapeHtml(event.date || "")}</div>
+                            </div>
+        
+                            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                <span class="calendar-badge ${priorityClass}">${priorityText}</span>
+                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteCalendarEvent(${event.id})">X</button>` : ``}
+                            </div>
+                        </div>
+        
+                        <div class="calendar-item-desc">${escapeHtml(event.desc || "")}</div>
+                    </div>
+                `;
+            }).join('') || `<p class="muted">Nincs még felvett esemény.</p>`;
+        }
+        
         renderAdminPanel();
         renderCart();
     }
@@ -2297,6 +2433,7 @@ function flashBalanceDirection(isUp) {
                 blacklist: Array.isArray(data.blacklist) ? data.blacklist : [],
                 accCart: Array.isArray(data.accCart) ? data.accCart : [],
                 prices: Array.isArray(data.prices) ? data.prices : [],
+                calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : [],
                 permissions: {
                     users: Array.isArray(data.permissions?.users) ? data.permissions.users : []
                 },
@@ -2642,6 +2779,45 @@ function flashBalanceDirection(isUp) {
     
         db.accCart = [];
         selectedAccMembers.clear();
+        save();
+    }
+
+    function addCalendarEvent() {
+        if (!requireFullAdmin()) return;
+    
+        const date = document.getElementById('calendarDate').value;
+        const title = document.getElementById('calendarTitle').value.trim();
+        const desc = document.getElementById('calendarDesc').value.trim();
+        const priority = document.getElementById('calendarPriority').value;
+    
+        if (!date || !title || !desc) {
+            return customAlert("Töltsd ki a dátumot, címet és leírást.");
+        }
+    
+        if (!Array.isArray(db.calendarEvents)) db.calendarEvents = [];
+    
+        db.calendarEvents.push({
+            id: Date.now(),
+            date,
+            title,
+            desc,
+            priority,
+            createdAt: Date.now()
+        });
+    
+        document.getElementById('calendarDate').value = "";
+        document.getElementById('calendarTitle').value = "";
+        document.getElementById('calendarDesc').value = "";
+        document.getElementById('calendarPriority').value = "normal";
+    
+        save();
+    }
+
+    function deleteCalendarEvent(id) {
+        if (!requireFullAdmin()) return;
+    
+        if (!Array.isArray(db.calendarEvents)) db.calendarEvents = [];
+        db.calendarEvents = db.calendarEvents.filter(event => event.id !== id);
         save();
     }
     
