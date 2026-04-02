@@ -1807,8 +1807,6 @@ h1.logo-graffiti[style*="font-size:100px"] {
         const share = Math.floor((total * 0.4) / selectedAccMembers.size);
         const peps = Array.from(selectedAccMembers).map(idx => db.members[idx]?.ic).filter(Boolean);
 
-        db.balance += total;
-
         selectedAccMembers.forEach(idx => {
             if (!db.members[idx]) return;
             db.members[idx].pay = (db.members[idx].pay || 0) + share;
@@ -1823,15 +1821,6 @@ h1.logo-graffiti[style*="font-size:100px"] {
             total,
             peps: peps.join(', '),
             share
-        });
-
-        db.logs.cash.push({
-            time: nowString(),
-            ts: Date.now(),
-            event: 'Könyvelés',
-            note: sel.options[sel.selectedIndex]?.text || '',
-            val: total,
-            bal: db.balance
         });
 
         selectedAccMembers.clear();
@@ -2826,9 +2815,7 @@ function flashBalanceDirection(isUp) {
         const total = db.accCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
         const share = Math.floor((total * 0.4) / selectedAccMembers.size);
         const peps = Array.from(selectedAccMembers).map(idx => db.members[idx]?.nick || db.members[idx]?.ic).filter(Boolean);
-    
-        db.balance += total;
-    
+        
         selectedAccMembers.forEach(idx => {
             if (!db.members[idx]) return;
             db.members[idx].pay = (db.members[idx].pay || 0) + share;
@@ -2845,14 +2832,6 @@ function flashBalanceDirection(isUp) {
             share
         });
     
-        db.logs.cash.push({
-            time: nowString(),
-            ts: Date.now(),
-            event: "Könyvelés (kosár)",
-            note: db.accCart.map(item => `${item.name} x${item.qty}`).join(', '),
-            val: total,
-            bal: db.balance
-        });
     
         db.accCart = [];
         selectedAccMembers.clear();
