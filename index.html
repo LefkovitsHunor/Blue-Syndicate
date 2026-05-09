@@ -1074,6 +1074,41 @@ h1.logo-graffiti[style*="font-size:100px"] {
         }
     }
         
+
+    .leader-chat-box {
+        height: 500px;
+        overflow-y: auto;
+        background: #080808;
+        border: 1px solid #222;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .leader-msg {
+        background: #101010;
+        border: 1px solid #2a2a2a;
+        border-left: 3px solid var(--primary-blue);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 10px;
+    }
+
+    .leader-msg-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        color: var(--primary-blue);
+        font-size: 13px;
+        margin-bottom: 6px;
+        flex-wrap: wrap;
+    }
+
+    .leader-msg-text {
+        white-space: pre-line;
+        color: #fff;
+        line-height: 1.5;
+    }
     </style>
 </head>
 <body>
@@ -1368,6 +1403,22 @@ h1.logo-graffiti[style*="font-size:100px"] {
         </div>
     </div>
 
+    <div id="vezetőségi-chat" class="tab-content">
+        <div class="section-head">
+            <h2>Vezetőségi Chat</h2>
+        </div>
+
+        <div class="dashboard-card">
+            <div id="leaderChatBox" class="leader-chat-box"></div>
+
+            <textarea id="leaderChatInput" rows="4" placeholder="Írj üzenetet a vezetőségnek..."></textarea>
+
+            <button class="btn-primary" style="width:100%" onclick="sendLeaderMessage()">
+                Üzenet küldése
+            </button>
+        </div>
+    </div>
+
     <div id="naptár" class="tab-content">
         <div class="section-head">
             <h2>Naptár</h2>
@@ -1422,7 +1473,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
 <script>
-    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "naptár", "fekete-lista", "admin-panel"];
+    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "naptár", "fekete-lista", "vezetőségi-chat", "admin-panel"];
 
     const RANK_ORDER = [
         "Prodigy",
@@ -1489,7 +1540,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
             permissions: {
                 users: []
             },
-            hiddenTabs: []
+            hiddenTabs: [],
+            leaderChat: []
         };
     }
 
@@ -1529,6 +1581,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         return getAccountingRoles().includes(currentUserRole);
     }
     
+    
     function canSeeTab(tabId) {
         const hiddenTabs = Array.isArray(db.hiddenTabs) ? db.hiddenTabs : [];
     
@@ -1549,6 +1602,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         if (tabId === "telefonkönyv") return true;
         if (tabId === "naptár") return true;
         if (tabId === "fekete-lista") return true;
+        if (tabId === "vezetőségi-chat") return isFullAdmin();
     
         return true;
     }
@@ -2398,6 +2452,7 @@ function flashBalanceDirection(isUp) {
             renderAdminPanel();
             renderCalendar();
             renderCart();
+            renderLeaderChat();
         }
 
     function showTab(id) {
@@ -2500,6 +2555,7 @@ function flashBalanceDirection(isUp) {
                 accCart: Array.isArray(data.accCart) ? data.accCart : [],
                 prices: Array.isArray(data.prices) ? data.prices : [],
                 calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : [],
+                leaderChat: Array.isArray(data.leaderChat) ? data.leaderChat : [],
                 permissions: {
                     users: Array.isArray(data.permissions?.users) ? data.permissions.users : []
                 },
@@ -3020,6 +3076,55 @@ function flashBalanceDirection(isUp) {
         }).join('');
     }
     
+    function sendLeaderMessage() {
+        if (!requireFullAdmin()) return;
+
+        const input = document.getElementById('leaderChatInput');
+        const text = input.value.trim();
+
+        if (!text) return customAlert("Nem írtál üzenetet.");
+
+        if (!Array.isArray(db.leaderChat)) db.leaderChat = [];
+
+        db.leaderChat.push({
+            id: Date.now(),
+            text,
+            author: currentUserEmail || "Ismeretlen",
+            role: currentUserRole || "Rookie",
+            time: nowString()
+        });
+
+        input.value = "";
+        save();
+    }
+
+    function deleteLeaderMessage(id) {
+        if (!requireFullAdmin()) return;
+
+        if (!Array.isArray(db.leaderChat)) db.leaderChat = [];
+        db.leaderChat = db.leaderChat.filter(msg => msg.id !== id);
+
+        save();
+    }
+
+    function renderLeaderChat() {
+        const box = document.getElementById('leaderChatBox');
+        if (!box) return;
+
+        const messages = Array.isArray(db.leaderChat) ? db.leaderChat : [];
+
+        box.innerHTML = messages.slice().reverse().map(msg => `
+            <div class="leader-msg">
+                <div class="leader-msg-head">
+                    <span>${escapeHtml(msg.author || '')} | ${escapeHtml(msg.role || '')}</span>
+                    <span>${escapeHtml(msg.time || '')}</span>
+                </div>
+                <div class="leader-msg-text">${escapeHtml(msg.text || '')}</div>
+                <button class="btn-danger" style="margin-top:8px;" onclick="deleteLeaderMessage(${msg.id})">Törlés</button>
+            </div>
+        `).join('') || `<p class="muted">Még nincs vezetőségi üzenet.</p>`;
+    }
+
 </script>
 </body>
 </html>
