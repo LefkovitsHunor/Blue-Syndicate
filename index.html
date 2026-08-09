@@ -1109,6 +1109,81 @@ h1.logo-graffiti[style*="font-size:100px"] {
         color: #fff;
         line-height: 1.5;
     }
+
+
+    /* =========================
+       LELTÁR
+       ========================= */
+    .inventory-toolbar {
+        display: grid;
+        grid-template-columns: minmax(220px, 1fr) 240px auto;
+        gap: 10px;
+        margin-bottom: 18px;
+        align-items: start;
+    }
+
+    .inventory-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+    }
+
+    .inventory-stat {
+        background: #0d0d0d;
+        border: 1px solid #292929;
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .inventory-stat strong {
+        display: block;
+        color: var(--primary-blue);
+        font-size: 28px;
+        margin-top: 4px;
+    }
+
+    .inventory-actions {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .inventory-actions button {
+        padding: 8px 11px;
+        min-width: 40px;
+    }
+
+    .inventory-qty {
+        font-size: 16px;
+        font-weight: 700;
+        color: #fff;
+    }
+
+    .inventory-low {
+        color: #ffd24d;
+        text-shadow: 0 0 10px rgba(255,210,77,.18);
+    }
+
+    .inventory-empty {
+        color: var(--neon-red);
+        text-shadow: 0 0 10px rgba(255,49,49,.18);
+    }
+
+    .inventory-note {
+        color: #aaa;
+        max-width: 300px;
+        white-space: normal !important;
+    }
+
+    .inventory-log-change.plus { color: var(--neon-green); font-weight: bold; }
+    .inventory-log-change.minus { color: var(--neon-red); font-weight: bold; }
+
+    @media (max-width: 760px) {
+        .inventory-toolbar { grid-template-columns: 1fr; }
+        .inventory-toolbar button { width: 100%; }
+    }
+
     </style>
 </head>
 <body>
@@ -1403,21 +1478,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         </div>
     </div>
 
-    <div id="vezetőségi-chat" class="tab-content">
-        <div class="section-head">
-            <h2>Vezetőségi Chat</h2>
-        </div>
-
-        <div class="dashboard-card">
-            <div id="leaderChatBox" class="leader-chat-box"></div>
-
-            <textarea id="leaderChatInput" rows="4" placeholder="Írj üzenetet a vezetőségnek..."></textarea>
-
-            <button class="btn-primary" style="width:100%" onclick="sendLeaderMessage()">
-                Üzenet küldése
-            </button>
-        </div>
-    </div>
+    
 
     <div id="naptár" class="tab-content">
         <div class="section-head">
@@ -1446,6 +1507,73 @@ h1.logo-graffiti[style*="font-size:100px"] {
         </div>
     </div>
     
+
+
+    <div id="leltár" class="tab-content">
+        <div class="section-head">
+            <h2>Leltár</h2>
+            <button class="btn-primary" onclick="openInventoryModal()">+ Új tétel</button>
+        </div>
+
+        <div class="inventory-stats">
+            <div class="inventory-stat">
+                <span class="muted">Különböző tételek</span>
+                <strong id="inventoryStatItems">0</strong>
+            </div>
+            <div class="inventory-stat">
+                <span class="muted">Összes készlet</span>
+                <strong id="inventoryStatQty">0</strong>
+            </div>
+            <div class="inventory-stat">
+                <span class="muted">Kategóriák</span>
+                <strong id="inventoryStatCategories">0</strong>
+            </div>
+        </div>
+
+        <div class="inventory-toolbar">
+            <input type="text" id="inventorySearch" placeholder="Keresés név, kategória vagy megjegyzés alapján..." oninput="renderInventory()">
+            <select id="inventoryCategoryFilter" onchange="renderInventory()">
+                <option value="">Minden kategória</option>
+            </select>
+            <button onclick="clearInventoryFilters()">Szűrők törlése</button>
+        </div>
+
+        <div class="dashboard-card" style="margin-bottom:22px;">
+            <table id="tabInventory">
+                <thead>
+                    <tr>
+                        <th>Tétel</th>
+                        <th>Kategória</th>
+                        <th>Mennyiség</th>
+                        <th>Megjegyzés</th>
+                        <th>Utolsó módosítás</th>
+                        <th>Művelet</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+
+        <div class="section-head">
+            <h3>Leltárnapló</h3>
+        </div>
+        <div class="dashboard-card">
+            <table id="tabInventoryLog">
+                <thead>
+                    <tr>
+                        <th>Idő</th>
+                        <th>Tétel</th>
+                        <th>Változás</th>
+                        <th>Készlet</th>
+                        <th>Módosította</th>
+                        <th>Megjegyzés</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
     <div id="fekete-lista" class="tab-content">
         <h2>Blacklist</h2>
         <div class="dashboard-card">
@@ -1473,7 +1601,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
 <script>
-    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "naptár", "fekete-lista", "vezetőségi-chat", "admin-panel"];
+    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "naptár", "leltár", "fekete-lista", "admin-panel"];
 
     const RANK_ORDER = [
         "Prodigy",
@@ -1537,6 +1665,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
             accCart: [],
             prices: [],
             calendarEvents: [],
+            inventory: [],
+            inventoryLog: [],
             permissions: {
                 users: []
             },
@@ -1601,8 +1731,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
         if (tabId === "pénzmozgás") return true;
         if (tabId === "telefonkönyv") return true;
         if (tabId === "naptár") return true;
+        if (tabId === "leltár") return true;
         if (tabId === "fekete-lista") return true;
-        if (tabId === "vezetőségi-chat") return isFullAdmin();
     
         return true;
     }
@@ -2451,6 +2581,7 @@ function flashBalanceDirection(isUp) {
             
             renderAdminPanel();
             renderCalendar();
+            renderInventory();
             renderCart();
             renderLeaderChat();
         }
@@ -2555,6 +2686,8 @@ function flashBalanceDirection(isUp) {
                 accCart: Array.isArray(data.accCart) ? data.accCart : [],
                 prices: Array.isArray(data.prices) ? data.prices : [],
                 calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : [],
+                inventory: Array.isArray(data.inventory) ? data.inventory : [],
+                inventoryLog: Array.isArray(data.inventoryLog) ? data.inventoryLog : [],
                 leaderChat: Array.isArray(data.leaderChat) ? data.leaderChat : [],
                 permissions: {
                     users: Array.isArray(data.permissions?.users) ? data.permissions.users : []
@@ -3076,6 +3209,266 @@ function flashBalanceDirection(isUp) {
         }).join('');
     }
     
+
+
+    function getInventoryEditorName() {
+        return currentUserEmail || "Ismeretlen";
+    }
+
+    function openInventoryModal(index = -1) {
+        if (!isFullAdmin()) return customAlert("Új leltártétel felvételéhez admin jogosultság szükséges.");
+
+        if (!Array.isArray(db.inventory)) db.inventory = [];
+        const item = index > -1 && db.inventory[index]
+            ? db.inventory[index]
+            : { name: '', category: '', quantity: 0, unit: 'db', note: '' };
+
+        showModal(`
+            <h3>${index > -1 ? 'Leltártétel szerkesztése' : 'Új leltártétel'}</h3>
+            <input id="invName" placeholder="Tétel neve" value="${escapeAttr(item.name || '')}">
+            <input id="invCategory" placeholder="Kategória (pl. Felszerelés)" value="${escapeAttr(item.category || '')}">
+            <input id="invQuantity" type="number" min="0" step="1" placeholder="Mennyiség" value="${Number(item.quantity || 0)}">
+            <select id="invUnit">
+                ${['db','csomag','kg','g','l','ml','rekesz','láda'].map(unit => `<option value="${unit}" ${item.unit === unit ? 'selected' : ''}>${unit}</option>`).join('')}
+            </select>
+            <textarea id="invNote" rows="3" placeholder="Megjegyzés (opcionális)">${escapeHtml(item.note || '')}</textarea>
+            <button class="btn-primary" style="width:100%" onclick="saveInventoryItem(${index})">MENTÉS</button>
+            <button class="btn-danger" style="width:100%; margin-top:6px;" onclick="closeModal()">MÉGSE</button>
+        `);
+    }
+
+    function saveInventoryItem(index) {
+        if (!requireFullAdmin()) return;
+        if (!Array.isArray(db.inventory)) db.inventory = [];
+        if (!Array.isArray(db.inventoryLog)) db.inventoryLog = [];
+
+        const name = document.getElementById('invName')?.value.trim();
+        const category = document.getElementById('invCategory')?.value.trim() || 'Egyéb';
+        const quantity = Number(document.getElementById('invQuantity')?.value || 0);
+        const unit = document.getElementById('invUnit')?.value || 'db';
+        const note = document.getElementById('invNote')?.value.trim() || '';
+
+        if (!name) return customAlert("A tétel neve kötelező.");
+        if (!Number.isFinite(quantity) || quantity < 0) return customAlert("A mennyiség nem lehet negatív.");
+
+        const now = Date.now();
+        const editor = getInventoryEditorName();
+
+        if (index > -1 && db.inventory[index]) {
+            const old = db.inventory[index];
+            const oldQty = Number(old.quantity || 0);
+            const diff = quantity - oldQty;
+
+            db.inventory[index] = {
+                ...old,
+                name,
+                category,
+                quantity,
+                unit,
+                note,
+                updatedAt: now,
+                updatedBy: editor
+            };
+
+            db.inventoryLog.push({
+                id: now,
+                time: nowString(),
+                ts: now,
+                item: name,
+                change: diff,
+                quantity,
+                unit,
+                author: editor,
+                note: diff === 0 ? 'Tételadatok szerkesztve' : 'Mennyiség szerkesztve'
+            });
+        } else {
+            const id = now + Math.floor(Math.random() * 1000);
+            db.inventory.push({
+                id,
+                name,
+                category,
+                quantity,
+                unit,
+                note,
+                createdAt: now,
+                updatedAt: now,
+                updatedBy: editor
+            });
+
+            db.inventoryLog.push({
+                id: now,
+                time: nowString(),
+                ts: now,
+                item: name,
+                change: quantity,
+                quantity,
+                unit,
+                author: editor,
+                note: 'Új tétel felvéve'
+            });
+        }
+
+        closeModal();
+        save();
+    }
+
+    function changeInventoryQty(index, direction) {
+        if (!Array.isArray(db.inventory) || !db.inventory[index]) return;
+
+        const item = db.inventory[index];
+        const action = direction > 0 ? 'hozzáadni' : 'kivenni';
+
+        showModal(`
+            <h3>${direction > 0 ? 'Készlet hozzáadása' : 'Készlet kivétele'}</h3>
+            <p><strong>${escapeHtml(item.name || '')}</strong></p>
+            <p class="muted">Jelenlegi készlet: ${Number(item.quantity || 0).toLocaleString()} ${escapeHtml(item.unit || 'db')}</p>
+            <input id="invChangeAmount" type="number" min="1" step="1" value="1" placeholder="Mennyiség">
+            <input id="invChangeNote" placeholder="Megjegyzés (opcionális)">
+            <button class="btn-primary" style="width:100%" onclick="confirmInventoryQty(${index}, ${direction})">${direction > 0 ? 'HOZZÁADÁS' : 'KIVÉTEL'}</button>
+            <button class="btn-danger" style="width:100%; margin-top:6px;" onclick="closeModal()">MÉGSE</button>
+        `);
+    }
+
+    function confirmInventoryQty(index, direction) {
+        if (!Array.isArray(db.inventory) || !db.inventory[index]) return;
+        if (!Array.isArray(db.inventoryLog)) db.inventoryLog = [];
+
+        const amount = Number(document.getElementById('invChangeAmount')?.value || 0);
+        const note = document.getElementById('invChangeNote')?.value.trim() || '';
+        if (!Number.isFinite(amount) || amount <= 0) return customAlert("Adj meg érvényes mennyiséget.");
+
+        const item = db.inventory[index];
+        const oldQty = Number(item.quantity || 0);
+        const newQty = oldQty + (direction * amount);
+        if (newQty < 0) return customAlert("Nincs ennyi készleten.");
+
+        const now = Date.now();
+        const editor = getInventoryEditorName();
+        item.quantity = newQty;
+        item.updatedAt = now;
+        item.updatedBy = editor;
+
+        db.inventoryLog.push({
+            id: now,
+            time: nowString(),
+            ts: now,
+            item: item.name || '',
+            change: direction * amount,
+            quantity: newQty,
+            unit: item.unit || 'db',
+            author: editor,
+            note: note || (direction > 0 ? 'Készlet hozzáadva' : 'Készlet kivéve')
+        });
+
+        closeModal();
+        save();
+    }
+
+    function deleteInventoryItem(index) {
+        if (!requireFullAdmin()) return;
+        if (!Array.isArray(db.inventory) || !db.inventory[index]) return;
+
+        const item = db.inventory[index];
+        customConfirm(`Biztosan törlöd a leltárból: ${escapeHtml(item.name || '')}?`, () => {
+            if (!Array.isArray(db.inventoryLog)) db.inventoryLog = [];
+            const now = Date.now();
+            db.inventoryLog.push({
+                id: now,
+                time: nowString(),
+                ts: now,
+                item: item.name || '',
+                change: -Number(item.quantity || 0),
+                quantity: 0,
+                unit: item.unit || 'db',
+                author: getInventoryEditorName(),
+                note: 'Tétel törölve a leltárból'
+            });
+            db.inventory.splice(index, 1);
+            save();
+        });
+    }
+
+    function clearInventoryFilters() {
+        const search = document.getElementById('inventorySearch');
+        const category = document.getElementById('inventoryCategoryFilter');
+        if (search) search.value = '';
+        if (category) category.value = '';
+        renderInventory();
+    }
+
+    function renderInventory() {
+        const body = document.querySelector('#tabInventory tbody');
+        const logBody = document.querySelector('#tabInventoryLog tbody');
+        if (!body || !logBody) return;
+
+        if (!Array.isArray(db.inventory)) db.inventory = [];
+        if (!Array.isArray(db.inventoryLog)) db.inventoryLog = [];
+
+        const search = (document.getElementById('inventorySearch')?.value || '').toLowerCase().trim();
+        const categoryFilter = document.getElementById('inventoryCategoryFilter')?.value || '';
+        const categories = [...new Set(db.inventory.map(i => (i.category || 'Egyéb').trim()).filter(Boolean))]
+            .sort((a,b) => a.localeCompare(b, 'hu'));
+
+        const categoryEl = document.getElementById('inventoryCategoryFilter');
+        if (categoryEl) {
+            const oldValue = categoryEl.value;
+            categoryEl.innerHTML = '<option value="">Minden kategória</option>' + categories.map(c =>
+                `<option value="${escapeAttr(c)}">${escapeHtml(c)}</option>`
+            ).join('');
+            categoryEl.value = categories.includes(oldValue) ? oldValue : '';
+        }
+
+        const effectiveCategory = categoryEl?.value || categoryFilter;
+        const rows = db.inventory
+            .map((item, index) => ({...item, _index:index}))
+            .filter(item => {
+                const haystack = `${item.name || ''} ${item.category || ''} ${item.note || ''}`.toLowerCase();
+                return (!search || haystack.includes(search)) && (!effectiveCategory || item.category === effectiveCategory);
+            })
+            .sort((a,b) => (a.category || '').localeCompare(b.category || '', 'hu') || (a.name || '').localeCompare(b.name || '', 'hu'));
+
+        body.innerHTML = rows.map(item => {
+            const qty = Number(item.quantity || 0);
+            const qtyClass = qty <= 0 ? 'inventory-empty' : qty <= 5 ? 'inventory-low' : '';
+            return `
+                <tr>
+                    <td><strong>${escapeHtml(item.name || '')}</strong></td>
+                    <td>${escapeHtml(item.category || 'Egyéb')}</td>
+                    <td><span class="inventory-qty ${qtyClass}">${qty.toLocaleString()} ${escapeHtml(item.unit || 'db')}</span></td>
+                    <td class="inventory-note">${escapeHtml(item.note || '-')}</td>
+                    <td>${item.updatedAt ? new Date(item.updatedAt).toLocaleString('hu-HU') : '-'}<br><small class="muted">${escapeHtml(item.updatedBy || '')}</small></td>
+                    <td>
+                        <div class="inventory-actions">
+                            <button onclick="changeInventoryQty(${item._index}, 1)" title="Hozzáadás">+</button>
+                            <button onclick="changeInventoryQty(${item._index}, -1)" title="Kivétel">−</button>
+                            ${isFullAdmin() ? `<button onclick="openInventoryModal(${item._index})">Szerk.</button><button class="btn-danger" onclick="deleteInventoryItem(${item._index})">X</button>` : ''}
+                        </div>
+                    </td>
+                </tr>`;
+        }).join('') || '<tr><td colspan="6" class="muted">Nincs a szűrésnek megfelelő leltártétel.</td></tr>';
+
+        const totalQty = db.inventory.reduce((sum, item) => sum + Number(item.quantity || 0), 0);
+        const statItems = document.getElementById('inventoryStatItems');
+        const statQty = document.getElementById('inventoryStatQty');
+        const statCategories = document.getElementById('inventoryStatCategories');
+        if (statItems) statItems.innerText = db.inventory.length.toLocaleString();
+        if (statQty) statQty.innerText = totalQty.toLocaleString();
+        if (statCategories) statCategories.innerText = categories.length.toLocaleString();
+
+        logBody.innerHTML = db.inventoryLog.slice().sort((a,b) => Number(b.ts || 0) - Number(a.ts || 0)).slice(0,100).map(log => {
+            const change = Number(log.change || 0);
+            return `
+                <tr>
+                    <td>${escapeHtml(log.time || '')}</td>
+                    <td>${escapeHtml(log.item || '')}</td>
+                    <td class="inventory-log-change ${change >= 0 ? 'plus' : 'minus'}">${change >= 0 ? '+' : ''}${change.toLocaleString()} ${escapeHtml(log.unit || 'db')}</td>
+                    <td>${Number(log.quantity || 0).toLocaleString()} ${escapeHtml(log.unit || 'db')}</td>
+                    <td>${escapeHtml(log.author || '')}</td>
+                    <td>${escapeHtml(log.note || '-')}</td>
+                </tr>`;
+        }).join('') || '<tr><td colspan="6" class="muted">Még nincs leltármozgás.</td></tr>';
+    }
+
     function sendLeaderMessage() {
         if (!requireFullAdmin()) return;
 
