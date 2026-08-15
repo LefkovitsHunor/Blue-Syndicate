@@ -2,7 +2,7 @@
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Blue Syndicate</title>
     <link href="https://fonts.googleapis.com/css2?family=Permanent+Marker&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
     <style>
@@ -1201,7 +1201,482 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
     }
 
-    </style>
+    
+    /* =========================================================
+       TELJES MOBIL / TABLET NÉZET
+       A desktop kinézetet nem módosítja.
+       ========================================================= */
+
+    img, video, iframe, canvas, svg {
+        max-width: 100%;
+    }
+
+    @media (max-width: 900px) {
+        html, body {
+            width: 100%;
+            max-width: 100%;
+            overflow-x: hidden !important;
+        }
+
+        body {
+            background-attachment: scroll !important;
+            padding-left: env(safe-area-inset-left);
+            padding-right: env(safe-area-inset-right);
+        }
+
+        /* Telefonon a fejléc ne fedje le a tartalmat. */
+        #siteHeader {
+            position: sticky !important;
+            top: 0 !important;
+            left: auto !important;
+            width: 100% !important;
+            padding: calc(8px + env(safe-area-inset-top)) 10px 8px !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 8px !important;
+            z-index: 9999 !important;
+        }
+
+        #siteHeader .logo-graffiti {
+            text-align: center !important;
+            font-size: 22px !important;
+            line-height: 1.05 !important;
+            margin: 0 !important;
+            flex: 0 0 auto;
+        }
+
+        /* Kompakt, egy soros, oldalra görgethető navigáció. */
+        #mainNav {
+            width: 100% !important;
+            max-width: 100% !important;
+            display: flex !important;
+            flex-wrap: nowrap !important;
+            gap: 7px !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            padding: 2px 2px 6px !important;
+            scroll-snap-type: x proximity;
+            scrollbar-width: thin;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #mainNav button {
+            flex: 0 0 auto !important;
+            width: auto !important;
+            min-width: max-content !important;
+            min-height: 40px !important;
+            padding: 9px 12px !important;
+            font-size: 11px !important;
+            letter-spacing: .7px !important;
+            white-space: nowrap !important;
+            scroll-snap-align: start;
+            transform: none !important;
+        }
+
+        .main-content {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
+            padding: 12px 8px calc(20px + env(safe-area-inset-bottom)) !important;
+        }
+
+        .tab-content {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding: 14px !important;
+            border-radius: 12px !important;
+            overflow: hidden !important;
+        }
+
+        .main-title {
+            font-size: clamp(34px, 13vw, 62px) !important;
+            margin: 20px 0 24px !important;
+            line-height: 1 !important;
+            word-break: break-word;
+        }
+
+        .music-player {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 16px auto 0 !important;
+            padding: 15px !important;
+        }
+
+        .music-controls {
+            display: grid !important;
+            grid-template-columns: repeat(3, 1fr) !important;
+            gap: 8px !important;
+        }
+
+        .music-controls button {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        .home-hub {
+            width: 100% !important;
+            max-width: 100% !important;
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+            margin-top: 16px !important;
+        }
+
+        .hub-card {
+            width: 100% !important;
+            padding: 17px !important;
+        }
+
+        .hub-card p {
+            min-height: 0 !important;
+        }
+
+        .dashboard-grid {
+            width: 100% !important;
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+        }
+
+        .dashboard-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            padding: 14px !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            overflow: hidden;
+        }
+
+        .section-head {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            gap: 10px !important;
+            margin-bottom: 14px !important;
+        }
+
+        .section-head h2,
+        .section-head h3 {
+            margin: 0 !important;
+        }
+
+        .section-head button {
+            width: 100% !important;
+        }
+
+        input, select, textarea, button {
+            max-width: 100% !important;
+            font-size: 16px !important;
+        }
+
+        input, select, textarea {
+            min-height: 44px;
+        }
+
+        textarea {
+            resize: vertical;
+        }
+
+        .trade-toggle-group {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+        }
+
+        .trade-toggle-group button {
+            width: 100% !important;
+            min-width: 0 !important;
+        }
+
+        #accMemberGrid {
+            display: grid !important;
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+            gap: 8px !important;
+        }
+
+        .member-card {
+            display: block !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            margin: 0 !important;
+            padding: 11px 7px !important;
+            overflow-wrap: anywhere;
+        }
+
+        #phGroups,
+        #priceGroups,
+        .controller-list {
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        /* Táblázatok telefonon vízszintesen görgethetők. */
+        table {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+            -webkit-overflow-scrolling: touch;
+            border-collapse: collapse !important;
+        }
+
+        table thead,
+        table tbody {
+            width: max-content;
+            min-width: 100%;
+        }
+
+        th, td {
+            white-space: nowrap !important;
+            padding: 9px 8px !important;
+            font-size: 12px !important;
+        }
+
+        td .inventory-actions,
+        .inventory-actions {
+            flex-wrap: nowrap !important;
+            min-width: max-content;
+        }
+
+        .inventory-toolbar {
+            width: 100% !important;
+            grid-template-columns: 1fr !important;
+            gap: 8px !important;
+        }
+
+        .inventory-stats {
+            width: 100% !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+        }
+
+        .inventory-stat {
+            min-width: 0 !important;
+            padding: 12px !important;
+        }
+
+        .inventory-stat strong {
+            font-size: 22px !important;
+            overflow-wrap: anywhere;
+        }
+
+        /* Irányító mobilon mindenhol egymás alatt. */
+        .controller-grid {
+            width: 100% !important;
+            max-width: 100% !important;
+            grid-template-columns: 1fr !important;
+            gap: 14px !important;
+        }
+
+        .controller-card {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            padding: 13px !important;
+        }
+
+        .controller-card-head {
+            align-items: flex-start !important;
+        }
+
+        .controller-card-title {
+            overflow-wrap: anywhere;
+        }
+
+        .offer-row {
+            width: 100% !important;
+            grid-template-columns: 74px minmax(0, 1fr) !important;
+            gap: 7px !important;
+        }
+
+        .offer-row > * {
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .offer-row button {
+            width: 100% !important;
+        }
+
+        /* A teljes GTA térkép mindig látszik és nem lóg ki. */
+        .gta-map-wrap {
+            width: 100% !important;
+            max-width: 100% !important;
+            aspect-ratio: 1 / 1 !important;
+            min-height: 0 !important;
+            height: auto !important;
+            margin: 0 auto !important;
+            border-radius: 10px !important;
+            touch-action: manipulation;
+        }
+
+        .gta-map-wrap img {
+            width: 100% !important;
+            height: 100% !important;
+            min-height: 0 !important;
+            object-fit: contain !important;
+        }
+
+        .map-pin {
+            width: 15px !important;
+            height: 15px !important;
+            border-width: 2px !important;
+        }
+
+        .map-pin::after {
+            width: 4px !important;
+            height: 4px !important;
+            top: 3px !important;
+            left: 3px !important;
+        }
+
+        .map-pin-label {
+            max-width: 120px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 9px !important;
+            padding: 3px 5px !important;
+        }
+
+        .map-help {
+            font-size: 12px !important;
+            line-height: 1.4;
+        }
+
+        #totalBal {
+            font-size: clamp(28px, 10vw, 48px) !important;
+            overflow-wrap: anywhere;
+        }
+
+        .price-card {
+            width: 100% !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+        }
+
+        .price-card button {
+            width: 100% !important;
+        }
+
+        .leader-chat-box {
+            height: min(52vh, 420px) !important;
+            padding: 10px !important;
+        }
+
+        .leader-msg {
+            overflow-wrap: anywhere;
+        }
+
+        /* Modalok telefonon is teljesen elérhetők. */
+        .modal-overlay {
+            padding: calc(10px + env(safe-area-inset-top)) 10px calc(10px + env(safe-area-inset-bottom)) !important;
+            align-items: center !important;
+        }
+
+        .modal-content {
+            width: 100% !important;
+            max-width: 520px !important;
+            max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom)) !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain;
+            padding: 17px !important;
+        }
+
+        #resetModal {
+            padding: 12px !important;
+        }
+
+        #resetModal > div {
+            width: 100% !important;
+            max-width: 420px !important;
+            padding: 20px !important;
+        }
+
+        #resetModal > div > div {
+            flex-direction: column !important;
+        }
+
+        #resetModal button {
+            width: 100% !important;
+        }
+    }
+
+    @media (max-width: 520px) {
+        .tab-content {
+            padding: 10px !important;
+        }
+
+        .dashboard-card {
+            padding: 11px !important;
+        }
+
+        #accMemberGrid,
+        .inventory-stats {
+            grid-template-columns: 1fr !important;
+        }
+
+        .trade-toggle-group {
+            grid-template-columns: 1fr !important;
+        }
+
+        .offer-row {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            padding: 10px 0 !important;
+        }
+
+        .offer-type {
+            font-size: 11px !important;
+        }
+
+        .controller-card-head {
+            flex-direction: column !important;
+        }
+
+        .controller-card-head > div:last-child {
+            width: 100%;
+        }
+
+        .controller-card-head button {
+            width: 100% !important;
+        }
+
+        .inventory-note {
+            max-width: 180px !important;
+        }
+
+        .main-title {
+            font-size: clamp(30px, 12vw, 48px) !important;
+        }
+    }
+
+    @media (orientation: landscape) and (max-height: 600px) and (max-width: 950px) {
+        #siteHeader {
+            position: sticky !important;
+            padding-top: 6px !important;
+        }
+
+        #siteHeader .logo-graffiti {
+            font-size: 18px !important;
+        }
+
+        #mainNav button {
+            min-height: 34px !important;
+            padding: 7px 10px !important;
+        }
+
+        .main-content {
+            padding-top: 8px !important;
+        }
+
+        .modal-content {
+            max-height: 92dvh !important;
+        }
+    }
+
+</style>
 </head>
 <body>
 
