@@ -897,184 +897,6 @@ h1.logo-graffiti[style*="font-size:100px"] {
         margin-bottom: 20px;
     }
 
-    .calendar-item {
-        background: #101010;
-        border: 1px solid #2a2a2a;
-        border-radius: 12px;
-        padding: 14px;
-        margin-bottom: 12px;
-        box-shadow: 0 0 12px rgba(0,0,0,0.25);
-    }
-    
-    .calendar-item:hover {
-        border-color: var(--primary-blue);
-        box-shadow: 0 0 14px rgba(55, 149, 255, 0.18);
-    }
-    
-    .calendar-item-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-        flex-wrap: wrap;
-    }
-    
-    .calendar-item-title {
-        font-size: 18px;
-        font-weight: bold;
-        color: #fff;
-    }
-    
-    .calendar-item-date {
-        color: var(--primary-blue);
-        font-size: 14px;
-    }
-    
-    .calendar-item-desc {
-        color: #cfcfcf;
-        white-space: pre-line;
-        line-height: 1.5;
-        margin-top: 8px;
-    }
-    
-    .calendar-badge {
-        display: inline-block;
-        padding: 5px 10px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: bold;
-        border: 1px solid #333;
-    }
-    
-    .calendar-normal {
-        color: #aaa;
-        border-color: #444;
-    }
-    
-    .calendar-fontos {
-        color: #ffd24d;
-        border-color: #ffd24d;
-        box-shadow: 0 0 10px rgba(255, 210, 77, 0.15);
-    }
-    
-    .calendar-surgos {
-        color: var(--neon-red);
-        border-color: var(--neon-red);
-        box-shadow: 0 0 10px rgba(255, 49, 49, 0.2);
-    }
-
-    .calendar-weekdays {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
-        margin-bottom: 10px;
-    }
-    
-    .calendar-weekdays div {
-        text-align: center;
-        font-weight: bold;
-        color: var(--primary-blue);
-        padding: 10px 0;
-        background: #0d0d0d;
-        border: 1px solid #222;
-        border-radius: 10px;
-        font-size: 13px;
-    }
-    
-    .calendar-grid {
-        display: grid;
-        grid-template-columns: repeat(7, 1fr);
-        gap: 8px;
-    }
-    
-    .calendar-day {
-        min-height: 120px;
-        background: #101010;
-        border: 1px solid #2a2a2a;
-        border-radius: 12px;
-        padding: 10px;
-        cursor: pointer;
-        position: relative;
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-    
-    .calendar-day:hover {
-        border-color: var(--primary-blue);
-        box-shadow: 0 0 14px rgba(55, 149, 255, 0.18);
-    }
-    
-    .calendar-day.other-month {
-        opacity: 0.35;
-    }
-    
-    .calendar-day.today {
-        border-color: var(--neon-green);
-        box-shadow: 0 0 14px rgba(57, 255, 20, 0.2);
-    }
-    
-    .calendar-day-number {
-        font-weight: bold;
-        font-size: 16px;
-        color: #fff;
-    }
-    
-    .calendar-day-events {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        margin-top: 4px;
-    }
-    
-    .calendar-event-chip {
-        font-size: 11px;
-        padding: 5px 7px;
-        border-radius: 8px;
-        background: rgba(55, 149, 255, 0.12);
-        border: 1px solid rgba(55, 149, 255, 0.25);
-        color: #fff;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-    
-    .calendar-event-chip.fontos {
-        border-color: rgba(255, 210, 77, 0.45);
-        color: #ffd24d;
-    }
-    
-    .calendar-event-chip.surgos {
-        border-color: rgba(255, 49, 49, 0.5);
-        color: #ff7b7b;
-    }
-    
-    @media (max-width: 900px) {
-        .calendar-grid,
-        .calendar-weekdays {
-            grid-template-columns: repeat(7, minmax(80px, 1fr));
-            overflow-x: auto;
-        }
-    }
-    
-    @media (max-width: 640px) {
-        .calendar-day {
-            min-height: 95px;
-            padding: 8px;
-        }
-    
-        .calendar-day-number {
-            font-size: 14px;
-        }
-    
-        .calendar-event-chip {
-            font-size: 10px;
-            padding: 4px 6px;
-        }
-    }
-        
-
     .leader-chat-box {
         height: 500px;
         overflow-y: auto;
@@ -1184,6 +1006,197 @@ h1.logo-graffiti[style*="font-size:100px"] {
         .inventory-toolbar button { width: 100%; }
     }
 
+
+    /* =========================
+       FŐOLDAL / IRÁNYÍTÓ
+       ========================= */
+    .home-hub {
+        max-width: 900px;
+        margin: 35px auto 0;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+    }
+
+    .hub-card {
+        background: rgba(10,10,10,.96);
+        border: 1px solid #2a2a2a;
+        border-radius: 16px;
+        padding: 24px;
+        text-align: center;
+        box-shadow: 0 0 25px rgba(0,0,0,.45);
+    }
+
+    .hub-card h3 {
+        margin-top: 0;
+        color: var(--primary-blue);
+        font-family: 'Rajdhani', sans-serif;
+        font-size: 24px;
+        letter-spacing: 1px;
+    }
+
+    .hub-card p {
+        color: #aaa;
+        min-height: 44px;
+    }
+
+    .hub-card button {
+        width: 100%;
+        font-size: 16px;
+        padding: 14px 18px;
+    }
+
+    .controller-grid {
+        display: grid;
+        grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+    }
+
+    .controller-list {
+        display: grid;
+        gap: 12px;
+    }
+
+    .controller-card {
+        background: #101010;
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+        padding: 16px;
+    }
+
+    .controller-card:hover {
+        border-color: var(--primary-blue);
+        box-shadow: 0 0 14px rgba(55,149,255,.18);
+    }
+
+    .controller-card-head {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 10px;
+    }
+
+    .controller-card-title {
+        color: #fff;
+        font-size: 19px;
+        font-weight: 700;
+    }
+
+    .offer-row {
+        display: grid;
+        grid-template-columns: 90px minmax(120px, 1fr) 140px auto;
+        gap: 10px;
+        align-items: center;
+        padding: 9px 0;
+        border-top: 1px solid #222;
+    }
+
+    .offer-type {
+        font-weight: 700;
+        font-size: 12px;
+        letter-spacing: .8px;
+    }
+
+    .offer-type.sell { color: var(--neon-green); }
+    .offer-type.buy { color: #ff8a8a; }
+
+    .gta-map-wrap {
+        position: relative;
+        width: 100%;
+        aspect-ratio: 1 / 1;
+        border: 1px solid #2a2a2a;
+        border-radius: 14px;
+        overflow: hidden;
+        background: #050505;
+        cursor: crosshair;
+        user-select: none;
+    }
+
+    .gta-map-wrap img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background: #050505;
+        pointer-events: none;
+    }
+
+    .map-pin {
+        position: absolute;
+        width: 18px;
+        height: 18px;
+        border: 3px solid #fff;
+        background: var(--primary-blue);
+        border-radius: 50% 50% 50% 0;
+        transform: translate(-50%, -100%) rotate(-45deg);
+        box-shadow: 0 0 14px rgba(55,149,255,.8);
+        z-index: 5;
+    }
+
+    .map-pin::after {
+        content: '';
+        position: absolute;
+        width: 5px;
+        height: 5px;
+        background: #fff;
+        border-radius: 50%;
+        top: 4px;
+        left: 4px;
+    }
+
+    .map-pin.saved {
+        background: var(--neon-green);
+        box-shadow: 0 0 14px rgba(57,255,20,.6);
+    }
+
+    .map-pin-label {
+        position: absolute;
+        transform: translate(-50%, 8px);
+        background: rgba(0,0,0,.88);
+        border: 1px solid #333;
+        color: #fff;
+        padding: 4px 7px;
+        border-radius: 6px;
+        font-size: 11px;
+        white-space: nowrap;
+        z-index: 6;
+        pointer-events: none;
+    }
+
+    .map-help {
+        margin-top: 8px;
+        color: #999;
+        font-size: 13px;
+    }
+
+    .equipment-items {
+        white-space: pre-line;
+        color: #ddd;
+        line-height: 1.55;
+    }
+
+    @media (max-width: 900px) {
+        .home-hub,
+        .controller-grid {
+            grid-template-columns: 1fr;
+        }
+
+
+        .offer-row {
+            grid-template-columns: 80px 1fr;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .home-hub {
+            grid-template-columns: 1fr;
+        }
+
+    }
+
     </style>
 </head>
 <body>
@@ -1219,6 +1232,20 @@ h1.logo-graffiti[style*="font-size:100px"] {
             <div class="music-list" id="musicList"></div>
     
             <audio id="bgMusic"></audio>
+        </div>
+
+        <div class="home-hub">
+            <div class="hub-card">
+                <h3>Vezetőség</h3>
+                <p>A jelenlegi vezetőségi, pénzügyi, tagkezelő és admin menük megnyitása.</p>
+                <button class="btn-primary" onclick="openSection('vezetoseg')">VEZETŐSÉG MEGNYITÁSA</button>
+            </div>
+
+            <div class="hub-card">
+                <h3>Irányító</h3>
+                <p>Maffiák, területek, adás-vételi árak és szükséges felszerelések kezelése.</p>
+                <button class="btn-primary" onclick="openSection('iranyito')">IRÁNYÍTÓ MEGNYITÁSA</button>
+            </div>
         </div>
     </div>
 
@@ -1478,37 +1505,6 @@ h1.logo-graffiti[style*="font-size:100px"] {
         </div>
     </div>
 
-    
-
-    <div id="naptár" class="tab-content">
-        <div class="section-head">
-            <h2>Naptár</h2>
-            <div style="display:flex; gap:10px; flex-wrap:wrap;">
-                <button onclick="changeCalendarMonth(-1)">◀ Előző</button>
-                <button onclick="goToToday()" class="btn-primary">Ma</button>
-                <button onclick="changeCalendarMonth(1)">Következő ▶</button>
-            </div>
-        </div>
-    
-        <div class="dashboard-card" style="margin-bottom:20px;">
-            <h3 id="calendarMonthTitle" style="margin-top:0;"></h3>
-    
-            <div class="calendar-weekdays">
-                <div>H</div>
-                <div>K</div>
-                <div>SZE</div>
-                <div>CS</div>
-                <div>P</div>
-                <div>SZO</div>
-                <div>V</div>
-            </div>
-    
-            <div id="calendarGrid" class="calendar-grid"></div>
-        </div>
-    </div>
-    
-
-
     <div id="leltár" class="tab-content">
         <div class="section-head">
             <h2>Leltár</h2>
@@ -1574,6 +1570,94 @@ h1.logo-graffiti[style*="font-size:100px"] {
         </div>
     </div>
 
+
+    <div id="iranyito-maffia" class="tab-content">
+        <div class="section-head">
+            <h2>Irányító / Maffia</h2>
+        </div>
+
+        <div class="controller-grid">
+            <div class="dashboard-card">
+                <h3>Maffia és ár hozzáadása</h3>
+                <input id="mafiaName" type="text" placeholder="Maffia neve">
+                <select id="mafiaOfferType">
+                    <option value="sell">ELADÁS</option>
+                    <option value="buy">VÉTEL</option>
+                </select>
+                <input id="mafiaItem" type="text" placeholder="Tárgy / termék">
+                <input id="mafiaPrice" type="number" min="0" placeholder="Ár (Cs)">
+                <button class="btn-primary" style="width:100%" onclick="addMafiaOffer()">MENTÉS</button>
+            </div>
+
+            <div>
+                <input id="mafiaSearch" type="text" placeholder="Keresés maffiára vagy tárgyra..." oninput="renderController()">
+                <div id="mafiaList" class="controller-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="iranyito-terulet" class="tab-content">
+        <div class="section-head">
+            <h2>Irányító / Terület</h2>
+        </div>
+
+        <div class="controller-grid">
+            <div class="dashboard-card">
+                <h3>Terület és ár hozzáadása</h3>
+                <input id="territoryName" type="text" placeholder="Terület neve">
+                <select id="territoryOfferType">
+                    <option value="sell">ELADÁS</option>
+                    <option value="buy">VÉTEL</option>
+                </select>
+                <input id="territoryItem" type="text" placeholder="Tárgy / termék">
+                <input id="territoryPrice" type="number" min="0" placeholder="Ár (Cs)">
+                <input id="territoryNote" type="text" placeholder="Megjegyzés (opcionális)">
+                <div id="territoryPointText" class="map-help">Nincs kijelölt pont.</div>
+                <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="addTerritoryOffer()">MENTÉS</button>
+                <button style="width:100%; margin-top:6px;" onclick="clearTerritoryForm()">ŰRLAP TÖRLÉSE</button>
+            </div>
+
+            <div>
+                <div id="gtaTerritoryMap" class="gta-map-wrap" onclick="setTerritoryPoint(event)">
+                    <img alt="GTA V térkép" src="https://static.wikia.nocookie.net/gtawiki/images/4/48/LosSantos-GTAV-Map.jpg/revision/latest/scale-to-width-down/1200?cb=20210901121031">
+                    <div id="territoryPins"></div>
+                </div>
+                <div class="map-help">Kattints a térképen a terület pontos helyére. A jelölés százalékos koordinátával mentődik, ezért más kijelzőméreten is ugyanott marad.</div>
+            </div>
+        </div>
+
+        <div style="margin-top:20px;">
+            <input id="territorySearch" type="text" placeholder="Keresés területre vagy tárgyra..." oninput="renderController()">
+            <div id="territoryList" class="controller-list"></div>
+        </div>
+    </div>
+
+    <div id="iranyito-felszereles" class="tab-content">
+        <div class="section-head">
+            <h2>Irányító / Felszerelés</h2>
+        </div>
+
+        <div class="controller-grid">
+            <div class="dashboard-card">
+                <h3>Felszerelési lista</h3>
+                <select id="equipmentType">
+                    <option value="Bank">Bank</option>
+                    <option value="Random akció">Random akció</option>
+                    <option value="Terület">Terület</option>
+                </select>
+                <input id="equipmentName" type="text" placeholder="Akció / hely neve (pl. Pacific Bank)">
+                <textarea id="equipmentItems" rows="8" placeholder="Szükséges felszerelés, soronként egy tétel..."></textarea>
+                <textarea id="equipmentNote" rows="3" placeholder="Megjegyzés (opcionális)"></textarea>
+                <button class="btn-primary" style="width:100%" onclick="saveEquipmentEntry()">MENTÉS</button>
+            </div>
+
+            <div>
+                <input id="equipmentSearch" type="text" placeholder="Keresés típusra, névre vagy felszerelésre..." oninput="renderController()">
+                <div id="equipmentList" class="controller-list"></div>
+            </div>
+        </div>
+    </div>
+
     <div id="fekete-lista" class="tab-content">
         <h2>Blacklist</h2>
         <div class="dashboard-card">
@@ -1601,7 +1685,9 @@ h1.logo-graffiti[style*="font-size:100px"] {
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
 <script>
-    const MENU = ["főoldal", "dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "naptár", "leltár", "fekete-lista", "admin-panel"];
+    const LEADERSHIP_MENU = ["dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "fizetés", "leltár", "fekete-lista", "admin-panel"];
+    const CONTROL_MENU = ["iranyito-maffia", "iranyito-terulet", "iranyito-felszereles"];
+    const MENU = ["főoldal", ...LEADERSHIP_MENU, ...CONTROL_MENU];
 
     const RANK_ORDER = [
         "Prodigy",
@@ -1644,7 +1730,9 @@ h1.logo-graffiti[style*="font-size:100px"] {
     let lastRenderedBalance = 0;
     let currentUserEmail = "";
     let currentUserRole = "Rookie";
-    let currentCalendarDate = new Date();
+    let currentNavSection = "home";
+    let pendingTerritoryPoint = null;
+    let editingEquipmentIndex = -1;
 
     function getDefaultDb() {
         return {
@@ -1664,14 +1752,18 @@ h1.logo-graffiti[style*="font-size:100px"] {
             blacklist: [],
             accCart: [],
             prices: [],
-            calendarEvents: [],
             inventory: [],
             inventoryLog: [],
             permissions: {
                 users: []
             },
             hiddenTabs: [],
-            leaderChat: []
+            leaderChat: [],
+            controller: {
+                mafias: [],
+                territories: [],
+                equipment: []
+            }
         };
     }
 
@@ -1730,9 +1822,9 @@ h1.logo-graffiti[style*="font-size:100px"] {
         if (tabId === "árak") return true;
         if (tabId === "pénzmozgás") return true;
         if (tabId === "telefonkönyv") return true;
-        if (tabId === "naptár") return true;
         if (tabId === "leltár") return true;
         if (tabId === "fekete-lista") return true;
+        if (CONTROL_MENU.includes(tabId)) return true;
     
         return true;
     }
@@ -2580,8 +2672,8 @@ function flashBalanceDirection(isUp) {
         ).join('');
             
             renderAdminPanel();
-            renderCalendar();
             renderInventory();
+            renderController();
             renderCart();
             renderLeaderChat();
         }
@@ -2594,6 +2686,30 @@ function flashBalanceDirection(isUp) {
         document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
         const btn = document.getElementById('btn-' + id);
         if (btn) btn.classList.add('active');
+
+        if (id === 'főoldal') {
+            currentNavSection = 'home';
+            buildMenu();
+        }
+    }
+
+    function openSection(section) {
+        currentNavSection = section;
+        buildMenu();
+
+        if (section === 'vezetoseg') {
+            const first = LEADERSHIP_MENU.find(tab => canSeeTab(tab));
+            if (first) showTab(first);
+            return;
+        }
+
+        if (section === 'iranyito') {
+            const first = CONTROL_MENU.find(tab => canSeeTab(tab));
+            if (first) showTab(first);
+            return;
+        }
+
+        showTab('főoldal');
     }
 
     function autoCleanup() {
@@ -2653,12 +2769,8 @@ function flashBalanceDirection(isUp) {
     
         buildMenu();
     
-        if (canSeeTab('főoldal')) {
-            showTab('főoldal');
-        } else {
-            const firstVisible = getVisibleMenu()[0];
-            if (firstVisible) showTab(firstVisible);
-        }
+        currentNavSection = "home";
+        showTab('főoldal');
     }
 
     function setupRealtimeSync() {
@@ -2685,10 +2797,14 @@ function flashBalanceDirection(isUp) {
                 blacklist: Array.isArray(data.blacklist) ? data.blacklist : [],
                 accCart: Array.isArray(data.accCart) ? data.accCart : [],
                 prices: Array.isArray(data.prices) ? data.prices : [],
-                calendarEvents: Array.isArray(data.calendarEvents) ? data.calendarEvents : [],
                 inventory: Array.isArray(data.inventory) ? data.inventory : [],
                 inventoryLog: Array.isArray(data.inventoryLog) ? data.inventoryLog : [],
                 leaderChat: Array.isArray(data.leaderChat) ? data.leaderChat : [],
+                controller: {
+                    mafias: Array.isArray(data.controller?.mafias) ? data.controller.mafias : [],
+                    territories: Array.isArray(data.controller?.territories) ? data.controller.territories : [],
+                    equipment: Array.isArray(data.controller?.equipment) ? data.controller.equipment : []
+                },
                 permissions: {
                     users: Array.isArray(data.permissions?.users) ? data.permissions.users : []
                 },
@@ -3027,190 +3143,6 @@ function flashBalanceDirection(isUp) {
         save();
     }
 
-    function deleteCalendarEvent(id) {
-        if (!requireFullAdmin()) return;
-    
-        if (!Array.isArray(db.calendarEvents)) db.calendarEvents = [];
-        db.calendarEvents = db.calendarEvents.filter(event => event.id !== id);
-        save();
-    }
-
-    function formatDateToYMD(date) {
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-    }
-    
-    function getMonthNameHu(monthIndex) {
-        const months = [
-            "Január", "Február", "Március", "Április", "Május", "Június",
-            "Július", "Augusztus", "Szeptember", "Október", "November", "December"
-        ];
-        return months[monthIndex] || "";
-    }
-    
-    function changeCalendarMonth(diff) {
-        currentCalendarDate.setMonth(currentCalendarDate.getMonth() + diff);
-        render();
-    }
-    
-    function goToToday() {
-        currentCalendarDate = new Date();
-        render();
-    }
-    
-    function openCalendarDayModal(dateStr) {
-        const dayEvents = (Array.isArray(db.calendarEvents) ? db.calendarEvents : [])
-            .filter(e => e.date === dateStr);
-    
-        showModal(`
-            <h3>Esemény - ${escapeHtml(dateStr)}</h3>
-    
-            ${isFullAdmin() ? `
-                <input type="text" id="calendarModalTitle" placeholder="Esemény címe">
-                <textarea id="calendarModalDesc" placeholder="Leírás..." rows="4"></textarea>
-    
-                <select id="calendarModalPriority">
-                    <option value="normal">Normál</option>
-                    <option value="fontos">Fontos</option>
-                    <option value="sürgős">Sürgős</option>
-                </select>
-    
-                <button class="btn-primary" style="width:100%; margin-bottom:12px;" onclick="addCalendarEventFromModal('${dateStr}')">
-                    Esemény mentése
-                </button>
-            ` : ''}
-    
-            <div style="text-align:left; max-height:250px; overflow-y:auto;">
-                ${
-                    dayEvents.length
-                    ? dayEvents.map(event => `
-                        <div style="padding:10px; border:1px solid #222; border-radius:10px; margin-bottom:8px; background:#0d0d0d;">
-                            <div style="font-weight:bold; margin-bottom:6px;">${escapeHtml(event.title || '')}</div>
-                            <div style="color:#bbb; white-space:pre-line; margin-bottom:8px;">${escapeHtml(event.desc || '')}</div>
-                            <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-                                <small style="color:#888;">${escapeHtml(event.priority || 'normal')}</small>
-                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteCalendarEvent(${event.id}); closeModal();">Törlés</button>` : ''}
-                            </div>
-                        </div>
-                    `).join('')
-                    : `<p class="muted">Erre a napra nincs esemény.</p>`
-                }
-            </div>
-    
-            <button class="btn-danger" style="width:100%; margin-top:10px;" onclick="closeModal()">Bezárás</button>
-        `);
-    }
-    
-    function addCalendarEventFromModal(dateStr) {
-        if (!requireFullAdmin()) return;
-    
-        const title = document.getElementById('calendarModalTitle')?.value.trim();
-        const desc = document.getElementById('calendarModalDesc')?.value.trim();
-        const priority = document.getElementById('calendarModalPriority')?.value || 'normal';
-    
-        if (!title || !desc) {
-            return customAlert("Töltsd ki a címet és a leírást.");
-        }
-    
-        if (!Array.isArray(db.calendarEvents)) db.calendarEvents = [];
-    
-        db.calendarEvents.push({
-            id: Date.now(),
-            date: dateStr,
-            title,
-            desc,
-            priority,
-            createdAt: Date.now()
-        });
-    
-        save();
-        closeModal();
-    }
-    
-    function renderCalendar() {
-        const monthTitleEl = document.getElementById('calendarMonthTitle');
-        const gridEl = document.getElementById('calendarGrid');
-    
-        if (!monthTitleEl || !gridEl) return;
-    
-        const year = currentCalendarDate.getFullYear();
-        const month = currentCalendarDate.getMonth();
-    
-        monthTitleEl.innerText = `${getMonthNameHu(month)} ${year}`;
-    
-        const firstDayOfMonth = new Date(year, month, 1);
-        const lastDayOfMonth = new Date(year, month + 1, 0);
-    
-        let startWeekday = firstDayOfMonth.getDay();
-        startWeekday = startWeekday === 0 ? 6 : startWeekday - 1;
-    
-        const daysInMonth = lastDayOfMonth.getDate();
-    
-        const prevMonthLastDay = new Date(year, month, 0).getDate();
-        const cells = [];
-    
-        for (let i = startWeekday - 1; i >= 0; i--) {
-            const dayNum = prevMonthLastDay - i;
-            const dateObj = new Date(year, month - 1, dayNum);
-            cells.push({
-                date: formatDateToYMD(dateObj),
-                day: dayNum,
-                currentMonth: false
-            });
-        }
-    
-        for (let day = 1; day <= daysInMonth; day++) {
-            const dateObj = new Date(year, month, day);
-            cells.push({
-                date: formatDateToYMD(dateObj),
-                day,
-                currentMonth: true
-            });
-        }
-    
-        const remaining = 42 - cells.length;
-        for (let day = 1; day <= remaining; day++) {
-            const dateObj = new Date(year, month + 1, day);
-            cells.push({
-                date: formatDateToYMD(dateObj),
-                day,
-                currentMonth: false
-            });
-        }
-    
-        const todayStr = formatDateToYMD(new Date());
-        const allEvents = Array.isArray(db.calendarEvents) ? db.calendarEvents : [];
-    
-        gridEl.innerHTML = cells.map(cell => {
-            const events = allEvents.filter(e => e.date === cell.date).slice(0, 3);
-    
-            return `
-                <div class="calendar-day ${cell.currentMonth ? '' : 'other-month'} ${cell.date === todayStr ? 'today' : ''}"
-                     onclick="openCalendarDayModal('${cell.date}')">
-                    <div class="calendar-day-number">${cell.day}</div>
-                    <div class="calendar-day-events">
-                        ${events.map(event => `
-                            <div class="calendar-event-chip ${
-                                event.priority === 'fontos' ? 'fontos' :
-                                event.priority === 'sürgős' ? 'surgos' : ''
-                            }">
-                                ${escapeHtml(event.title || '')}
-                            </div>
-                        `).join('')}
-                        ${allEvents.filter(e => e.date === cell.date).length > 3
-                            ? `<div class="calendar-event-chip">+ további</div>`
-                            : ''
-                        }
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-    
-
-
     function getInventoryEditorName() {
         return currentUserEmail || "Ismeretlen";
     }
@@ -3467,6 +3399,398 @@ function flashBalanceDirection(isUp) {
                     <td>${escapeHtml(log.note || '-')}</td>
                 </tr>`;
         }).join('') || '<tr><td colspan="6" class="muted">Még nincs leltármozgás.</td></tr>';
+    }
+
+
+    function ensureControllerDb() {
+        if (!db.controller || typeof db.controller !== 'object') {
+            db.controller = { mafias: [], territories: [], equipment: [] };
+        }
+        if (!Array.isArray(db.controller.mafias)) db.controller.mafias = [];
+        if (!Array.isArray(db.controller.territories)) db.controller.territories = [];
+        if (!Array.isArray(db.controller.equipment)) db.controller.equipment = [];
+    }
+
+    function requireControllerEdit() {
+        if (!isFullAdmin()) {
+            customAlert("Az Irányító adatainak módosításához vezetőségi/admin jogosultság szükséges.");
+            return false;
+        }
+        return true;
+    }
+
+    function addMafiaOffer() {
+        if (!requireControllerEdit()) return;
+        ensureControllerDb();
+
+        const name = document.getElementById('mafiaName')?.value.trim() || '';
+        const type = document.getElementById('mafiaOfferType')?.value || 'sell';
+        const item = document.getElementById('mafiaItem')?.value.trim() || '';
+        const price = Number(document.getElementById('mafiaPrice')?.value || 0);
+
+        if (!name || !item || !Number.isFinite(price) || price < 0) {
+            return customAlert("Add meg a maffia nevét, a tárgyat és az árat.");
+        }
+
+        let mafia = db.controller.mafias.find(m => (m.name || '').toLowerCase() === name.toLowerCase());
+        if (!mafia) {
+            mafia = { id: Date.now(), name, offers: [] };
+            db.controller.mafias.push(mafia);
+        }
+        if (!Array.isArray(mafia.offers)) mafia.offers = [];
+
+        mafia.offers.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            type,
+            item,
+            price,
+            updatedAt: Date.now(),
+            updatedBy: currentUserEmail || ''
+        });
+
+        document.getElementById('mafiaItem').value = '';
+        document.getElementById('mafiaPrice').value = '';
+        save();
+    }
+
+    function deleteMafiaOffer(mafiaIndex, offerIndex) {
+        if (!requireControllerEdit()) return;
+        ensureControllerDb();
+        const mafia = db.controller.mafias[mafiaIndex];
+        if (!mafia || !Array.isArray(mafia.offers) || !mafia.offers[offerIndex]) return;
+        mafia.offers.splice(offerIndex, 1);
+        save();
+    }
+
+    function deleteMafia(mafiaIndex) {
+        if (!requireControllerEdit()) return;
+        ensureControllerDb();
+        const mafia = db.controller.mafias[mafiaIndex];
+        if (!mafia) return;
+
+        customConfirm(`Biztosan törlöd ezt a maffiát: ${escapeHtml(mafia.name || '')}?`, () => {
+            db.controller.mafias.splice(mafiaIndex, 1);
+            save();
+        });
+    }
+
+    function setTerritoryPoint(event) {
+        const wrap = document.getElementById('gtaTerritoryMap');
+        if (!wrap) return;
+
+        const rect = wrap.getBoundingClientRect();
+        const x = Math.max(0, Math.min(100, ((event.clientX - rect.left) / rect.width) * 100));
+        const y = Math.max(0, Math.min(100, ((event.clientY - rect.top) / rect.height) * 100));
+
+        pendingTerritoryPoint = { x: Number(x.toFixed(3)), y: Number(y.toFixed(3)) };
+        updateTerritoryPointText();
+        renderTerritoryPins();
+    }
+
+    function updateTerritoryPointText() {
+        const el = document.getElementById('territoryPointText');
+        if (!el) return;
+
+        el.innerText = pendingTerritoryPoint
+            ? `Kijelölt pont: X ${pendingTerritoryPoint.x.toFixed(1)}% / Y ${pendingTerritoryPoint.y.toFixed(1)}%`
+            : 'Nincs kijelölt pont.';
+    }
+
+    function clearTerritoryForm() {
+        const ids = ['territoryName', 'territoryItem', 'territoryPrice', 'territoryNote'];
+        ids.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = '';
+        });
+        pendingTerritoryPoint = null;
+        updateTerritoryPointText();
+        renderTerritoryPins();
+    }
+
+    function loadTerritoryToForm(index) {
+        ensureControllerDb();
+        const territory = db.controller.territories[index];
+        if (!territory) return;
+
+        const nameEl = document.getElementById('territoryName');
+        const noteEl = document.getElementById('territoryNote');
+        if (nameEl) nameEl.value = territory.name || '';
+        if (noteEl) noteEl.value = territory.note || '';
+
+        pendingTerritoryPoint = territory.point
+            ? { x: Number(territory.point.x || 0), y: Number(territory.point.y || 0) }
+            : null;
+
+        updateTerritoryPointText();
+        renderTerritoryPins();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function addTerritoryOffer() {
+        if (!requireControllerEdit()) return;
+        ensureControllerDb();
+
+        const name = document.getElementById('territoryName')?.value.trim() || '';
+        const type = document.getElementById('territoryOfferType')?.value || 'sell';
+        const item = document.getElementById('territoryItem')?.value.trim() || '';
+        const price = Number(document.getElementById('territoryPrice')?.value || 0);
+        const note = document.getElementById('territoryNote')?.value.trim() || '';
+
+        if (!name || !item || !Number.isFinite(price) || price < 0) {
+            return customAlert("Add meg a terület nevét, a tárgyat és az árat.");
+        }
+
+        let territory = db.controller.territories.find(t => (t.name || '').toLowerCase() === name.toLowerCase());
+
+        if (!territory && !pendingTerritoryPoint) {
+            return customAlert("Jelöld be a terület helyét a GTA térképen.");
+        }
+
+        if (!territory) {
+            territory = {
+                id: Date.now(),
+                name,
+                note,
+                point: pendingTerritoryPoint ? { ...pendingTerritoryPoint } : null,
+                offers: []
+            };
+            db.controller.territories.push(territory);
+        } else {
+            territory.note = note;
+            if (pendingTerritoryPoint) territory.point = { ...pendingTerritoryPoint };
+        }
+
+        if (!Array.isArray(territory.offers)) territory.offers = [];
+        territory.offers.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
+            type,
+            item,
+            price,
+            updatedAt: Date.now(),
+            updatedBy: currentUserEmail || ''
+        });
+
+        document.getElementById('territoryItem').value = '';
+        document.getElementById('territoryPrice').value = '';
+        save();
+    }
+
+    function deleteTerritoryOffer(territoryIndex, offerIndex) {
+        if (!requireControllerEdit()) return;
+        ensureControllerDb();
+        const territory = db.controller.territories[territoryIndex];
+        if (!territory || !Array.isArray(territory.offers) || !territory.offers[offerIndex]) return;
+        territory.offers.splice(offerIndex, 1);
+        save();
+    }
+
+    function deleteTerritory(index) {
+        if (!requireControllerEdit()) return;
+        ensureControllerDb();
+        const territory = db.controller.territories[index];
+        if (!territory) return;
+
+        customConfirm(`Biztosan törlöd ezt a területet: ${escapeHtml(territory.name || '')}?`, () => {
+            db.controller.territories.splice(index, 1);
+            pendingTerritoryPoint = null;
+            save();
+        });
+    }
+
+    function renderTerritoryPins() {
+        const pins = document.getElementById('territoryPins');
+        if (!pins) return;
+        ensureControllerDb();
+
+        let html = db.controller.territories.map((territory, index) => {
+            if (!territory.point) return '';
+            const x = Number(territory.point.x || 0);
+            const y = Number(territory.point.y || 0);
+
+            return `
+                <div class="map-pin saved" style="left:${x}%; top:${y}%;" title="${escapeAttr(territory.name || '')}"></div>
+                <div class="map-pin-label" style="left:${x}%; top:${y}%;">${escapeHtml(territory.name || '')}</div>
+            `;
+        }).join('');
+
+        if (pendingTerritoryPoint) {
+            html += `<div class="map-pin" style="left:${pendingTerritoryPoint.x}%; top:${pendingTerritoryPoint.y}%;" title="Új kijelölés"></div>`;
+        }
+
+        pins.innerHTML = html;
+    }
+
+    function saveEquipmentEntry() {
+        if (!requireControllerEdit()) return;
+        ensureControllerDb();
+
+        const type = document.getElementById('equipmentType')?.value || 'Random akció';
+        const name = document.getElementById('equipmentName')?.value.trim() || '';
+        const items = document.getElementById('equipmentItems')?.value.trim() || '';
+        const note = document.getElementById('equipmentNote')?.value.trim() || '';
+
+        if (!name || !items) {
+            return customAlert("Add meg az akció/hely nevét és a szükséges felszerelést.");
+        }
+
+        const entry = {
+            id: editingEquipmentIndex > -1 && db.controller.equipment[editingEquipmentIndex]
+                ? db.controller.equipment[editingEquipmentIndex].id
+                : Date.now(),
+            type,
+            name,
+            items,
+            note,
+            updatedAt: Date.now(),
+            updatedBy: currentUserEmail || ''
+        };
+
+        if (editingEquipmentIndex > -1 && db.controller.equipment[editingEquipmentIndex]) {
+            db.controller.equipment[editingEquipmentIndex] = entry;
+        } else {
+            db.controller.equipment.push(entry);
+        }
+
+        editingEquipmentIndex = -1;
+        document.getElementById('equipmentName').value = '';
+        document.getElementById('equipmentItems').value = '';
+        document.getElementById('equipmentNote').value = '';
+        save();
+    }
+
+    function editEquipmentEntry(index) {
+        ensureControllerDb();
+        const entry = db.controller.equipment[index];
+        if (!entry) return;
+
+        editingEquipmentIndex = index;
+        document.getElementById('equipmentType').value = entry.type || 'Random akció';
+        document.getElementById('equipmentName').value = entry.name || '';
+        document.getElementById('equipmentItems').value = entry.items || '';
+        document.getElementById('equipmentNote').value = entry.note || '';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function deleteEquipmentEntry(index) {
+        if (!requireControllerEdit()) return;
+        ensureControllerDb();
+        const entry = db.controller.equipment[index];
+        if (!entry) return;
+
+        customConfirm(`Biztosan törlöd ezt a felszerelési listát: ${escapeHtml(entry.name || '')}?`, () => {
+            db.controller.equipment.splice(index, 1);
+            editingEquipmentIndex = -1;
+            save();
+        });
+    }
+
+    function renderController() {
+        ensureControllerDb();
+
+        const mafiaList = document.getElementById('mafiaList');
+        if (mafiaList) {
+            const q = (document.getElementById('mafiaSearch')?.value || '').toLowerCase().trim();
+            const mafias = db.controller.mafias
+                .map((m, index) => ({ ...m, _index: index }))
+                .filter(m => {
+                    const offers = Array.isArray(m.offers) ? m.offers : [];
+                    const hay = `${m.name || ''} ${offers.map(o => `${o.item || ''} ${o.price || ''} ${o.type || ''}`).join(' ')}`.toLowerCase();
+                    return !q || hay.includes(q);
+                });
+
+            mafiaList.innerHTML = mafias.map(mafia => {
+                const offers = Array.isArray(mafia.offers) ? mafia.offers : [];
+                return `
+                    <div class="controller-card">
+                        <div class="controller-card-head">
+                            <div class="controller-card-title">${escapeHtml(mafia.name || '')}</div>
+                            ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteMafia(${mafia._index})">Törlés</button>` : ''}
+                        </div>
+                        ${offers.map((offer, oi) => `
+                            <div class="offer-row">
+                                <span class="offer-type ${offer.type === 'buy' ? 'buy' : 'sell'}">${offer.type === 'buy' ? 'VÉTEL' : 'ELADÁS'}</span>
+                                <strong>${escapeHtml(offer.item || '')}</strong>
+                                <span>${Number(offer.price || 0).toLocaleString()} Cs</span>
+                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteMafiaOffer(${mafia._index}, ${oi})">X</button>` : ''}
+                            </div>
+                        `).join('') || `<p class="muted">Nincs rögzített ár.</p>`}
+                    </div>
+                `;
+            }).join('') || `<p class="muted">Nincs rögzített maffia.</p>`;
+        }
+
+        const territoryList = document.getElementById('territoryList');
+        if (territoryList) {
+            const q = (document.getElementById('territorySearch')?.value || '').toLowerCase().trim();
+            const territories = db.controller.territories
+                .map((t, index) => ({ ...t, _index: index }))
+                .filter(t => {
+                    const offers = Array.isArray(t.offers) ? t.offers : [];
+                    const hay = `${t.name || ''} ${t.note || ''} ${offers.map(o => `${o.item || ''} ${o.price || ''} ${o.type || ''}`).join(' ')}`.toLowerCase();
+                    return !q || hay.includes(q);
+                });
+
+            territoryList.innerHTML = territories.map(territory => {
+                const offers = Array.isArray(territory.offers) ? territory.offers : [];
+                return `
+                    <div class="controller-card">
+                        <div class="controller-card-head">
+                            <div>
+                                <div class="controller-card-title">${escapeHtml(territory.name || '')}</div>
+                                <small class="muted">${territory.point ? `X ${Number(territory.point.x || 0).toFixed(1)}% / Y ${Number(territory.point.y || 0).toFixed(1)}%` : 'Nincs térképpont'}</small>
+                            </div>
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <button onclick="loadTerritoryToForm(${territory._index})">Betöltés</button>
+                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteTerritory(${territory._index})">Törlés</button>` : ''}
+                            </div>
+                        </div>
+                        ${territory.note ? `<p class="muted">${escapeHtml(territory.note)}</p>` : ''}
+                        ${offers.map((offer, oi) => `
+                            <div class="offer-row">
+                                <span class="offer-type ${offer.type === 'buy' ? 'buy' : 'sell'}">${offer.type === 'buy' ? 'VÉTEL' : 'ELADÁS'}</span>
+                                <strong>${escapeHtml(offer.item || '')}</strong>
+                                <span>${Number(offer.price || 0).toLocaleString()} Cs</span>
+                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteTerritoryOffer(${territory._index}, ${oi})">X</button>` : ''}
+                            </div>
+                        `).join('') || `<p class="muted">Nincs rögzített ár.</p>`}
+                    </div>
+                `;
+            }).join('') || `<p class="muted">Nincs rögzített terület.</p>`;
+        }
+
+        const equipmentList = document.getElementById('equipmentList');
+        if (equipmentList) {
+            const q = (document.getElementById('equipmentSearch')?.value || '').toLowerCase().trim();
+            const equipment = db.controller.equipment
+                .map((e, index) => ({ ...e, _index: index }))
+                .filter(e => {
+                    const hay = `${e.type || ''} ${e.name || ''} ${e.items || ''} ${e.note || ''}`.toLowerCase();
+                    return !q || hay.includes(q);
+                })
+                .sort((a,b) => (a.type || '').localeCompare(b.type || '', 'hu') || (a.name || '').localeCompare(b.name || '', 'hu'));
+
+            equipmentList.innerHTML = equipment.map(entry => `
+                <div class="controller-card">
+                    <div class="controller-card-head">
+                        <div>
+                            <div class="controller-card-title">${escapeHtml(entry.name || '')}</div>
+                            <small style="color:var(--primary-blue);">${escapeHtml(entry.type || '')}</small>
+                        </div>
+                        ${isFullAdmin() ? `
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <button onclick="editEquipmentEntry(${entry._index})">Szerk.</button>
+                                <button class="btn-danger" onclick="deleteEquipmentEntry(${entry._index})">Törlés</button>
+                            </div>
+                        ` : ''}
+                    </div>
+                    <div class="equipment-items">${escapeHtml(entry.items || '')}</div>
+                    ${entry.note ? `<p class="muted">${escapeHtml(entry.note)}</p>` : ''}
+                </div>
+            `).join('') || `<p class="muted">Nincs rögzített felszerelési lista.</p>`;
+        }
+
+        renderTerritoryPins();
+        updateTerritoryPointText();
     }
 
     function sendLeaderMessage() {
