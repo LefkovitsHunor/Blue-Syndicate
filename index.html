@@ -1761,6 +1761,12 @@ h1.logo-graffiti[style*="font-size:100px"] {
                     ADATOK TELJES TÖRLÉSE
                 </button>
             </div>
+
+            <div class="dashboard-card">
+                <h3>BIZTONSÁGI MENTÉS</h3>
+                <p class="muted">Korábbi adatállapot visszaállítása dátum és idő alapján.</p>
+                <button class="btn-primary" style="width:100%" onclick="openBackupRestoreModal()">MENTÉSEK / VISSZAÁLLÍTÁS</button>
+            </div>
         </div>
 
         <h2>Konfiguráció</h2>
@@ -2188,6 +2194,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     const auth = firebase.auth();
     const firestore = firebase.firestore();
     const DB_DOC = firestore.collection("shared").doc("mainData");
+    const BACKUP_COLLECTION = firestore.collection("sharedBackups");
 
     let db = getDefaultDb();
     let currentTrType = null;
@@ -2199,6 +2206,10 @@ h1.logo-graffiti[style*="font-size:100px"] {
     let currentNavSection = "home";
     let pendingTerritoryPoint = null;
     let editingEquipmentIndex = -1;
+    let saveQueue = Promise.resolve();
+    let localRevision = 0;
+    let lastRemoteRevision = 0;
+    const LOCAL_BACKUP_KEY = "blueSyndicate_mainData_backup_v2";
 
     function getDefaultDb() {
         return {
@@ -2380,7 +2391,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
             <tr>
                 <td>${escapeHtml(u.email || "")}</td>
                 <td>${escapeHtml(u.role || "")}</td>
-                <td><button class="btn-danger" onclick="deletePermissionUser(${i})">X</button></td>
+                <td><button class="btn-danger" onclick="deletePermissionUser(${i})">Törlés</button></td>
             </tr>
         `).join('') || `<tr><td colspan="3" class="muted">Nincs hozzáadott jogosultság</td></tr>`;
     
@@ -2400,22 +2411,212 @@ h1.logo-graffiti[style*="font-size:100px"] {
         return new Date().toLocaleString('hu-HU');
     }
 
-    function save() {
-    if (!isSyncReady) {
-        console.log("Még nincs kész a szinkron.");
-        return;
+    function sanitizeDbForSave(source) {
+        const defaults = getDefaultDb();
+        const merged = { ...defaults, ...(source || {}) };
+
+        merged.balance = Number(merged.balance || 0);
+        if (!Number.isFinite(merged.balance)) merged.balance = 0;
+
+        merged.config = {
+            tradeItems: Array.isArray(merged.config?.tradeItems) ? merged.config.tradeItems : [],
+            fractions: Array.isArray(merged.config?.fractions) ? merged.config.fractions : [],
+            accTypes: Array.isArray(merged.config?.accTypes) ? merged.config.accTypes : []
+        };
+        merged.logs = {
+            trade: Array.isArray(merged.logs?.trade) ? merged.logs.trade : [],
+            cash: Array.isArray(merged.logs?.cash) ? merged.logs.cash : [],
+            acc: Array.isArray(merged.logs?.acc) ? merged.logs.acc : []
+        };
+        merged.prices = Array.isArray(merged.prices) ? merged.prices : [];
+        merged.inventory = Array.isArray(merged.inventory) ? merged.inventory : [];
+        merged.inventoryLog = Array.isArray(merged.inventoryLog) ? merged.inventoryLog : [];
+        merged.accCart = Array.isArray(merged.accCart) ? merged.accCart : [];
+        merged.contacts = Array.isArray(merged.contacts) ? merged.contacts : [];
+        merged.blacklist = Array.isArray(merged.blacklist) ? merged.blacklist : [];
+        merged.leaderChat = Array.isArray(merged.leaderChat) ? merged.leaderChat : [];
+        merged.permissions = { users: Array.isArray(merged.permissions?.users) ? merged.permissions.users : [] };
+        merged.hiddenTabs = Array.isArray(merged.hiddenTabs) ? merged.hiddenTabs : [];
+        merged.controller = {
+            mafias: Array.isArray(merged.controller?.mafias) ? merged.controller.mafias : [],
+            territories: Array.isArray(merged.controller?.territories) ? merged.controller.territories : [],
+            equipment: Array.isArray(merged.controller?.equipment) ? merged.controller.equipment : []
+        };
+
+        // Firestore nem fogad el undefined értékeket. JSON round-trip-pal ezeket kiszűrjük.
+        return JSON.parse(JSON.stringify(merged));
     }
 
-    console.log("MENTÉS INDUL", JSON.parse(JSON.stringify(db)));
+    function getBackupPayload(source) {
+        const clean = sanitizeDbForSave(source);
+        delete clean._clientRevision;
+        delete clean._updatedAt;
+        return clean;
+    }
 
-    DB_DOC.set(db)
-        .then(() => {
-            console.log("MENTÉS SIKERES");
-        })
-        .catch((err) => {
-            console.error("MENTÉSI HIBA:", err);
-            customAlert("Nem sikerült menteni az adatokat: " + err.message);
-        });
+    async function createBackupSnapshot(source, reason = "auto") {
+        if (!isSyncReady) return false;
+        const backup = {
+            createdAt: Date.now(),
+            createdBy: currentUserEmail || "",
+            reason,
+            data: getBackupPayload(source)
+        };
+
+        try {
+            await BACKUP_COLLECTION.add(backup);
+            return true;
+        } catch (err) {
+            console.error("BIZTONSÁGI MENTÉS HIBA:", err);
+            // Az alapadat mentését ne akadályozza meg egy külön backup-jogosultsági hiba.
+            return false;
+        }
+    }
+
+    function formatBackupDate(timestamp) {
+        const d = new Date(Number(timestamp || 0));
+        if (Number.isNaN(d.getTime())) return "-";
+        return d.toLocaleString("hu-HU");
+    }
+
+    async function openBackupRestoreModal() {
+        if (!requireFullAdmin()) return;
+
+        const now = new Date();
+        const localIso = new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        showModal(`
+            <h2>Biztonsági mentések</h2>
+            <p class="muted">Adj meg egy időpontot. A rendszer az adott időpontnál nem későbbi, legközelebbi mentést állítja vissza.</p>
+            <label style="display:block; text-align:left; margin-bottom:6px;">Visszaállítási időpont</label>
+            <input id="restoreDateTime" type="datetime-local" value="${localIso}">
+            <button class="btn-primary" style="width:100%; margin-top:6px;" onclick="restoreBackupBySelectedTime()">VISSZAÁLLÍTÁS ERRE AZ IDŐPONTRA</button>
+            <button style="width:100%; margin-top:8px;" onclick="createManualBackup()">KÉZI MENTÉS KÉSZÍTÉSE MOST</button>
+            <div style="margin-top:18px; text-align:left;">
+                <strong>Legutóbbi mentések</strong>
+                <div id="backupRecentList" class="muted" style="margin-top:8px;">Betöltés...</div>
+            </div>
+            <button style="width:100%; margin-top:18px;" onclick="closeModal()">BEZÁRÁS</button>
+        `);
+        await loadRecentBackups();
+    }
+
+    async function loadRecentBackups() {
+        const box = document.getElementById("backupRecentList");
+        if (!box) return;
+        try {
+            const snap = await BACKUP_COLLECTION.orderBy("createdAt", "desc").limit(10).get();
+            if (snap.empty) {
+                box.innerHTML = "Még nincs biztonsági mentés.";
+                return;
+            }
+            box.innerHTML = snap.docs.map(doc => {
+                const b = doc.data() || {};
+                const reason = b.reason === "manual" ? "Kézi" : b.reason === "pre_restore" ? "Visszaállítás előtti" : b.reason === "pre_reset" ? "Törlés előtti" : "Automatikus";
+                return `<div style="padding:8px 0; border-bottom:1px solid #222;">${escapeHtml(formatBackupDate(b.createdAt))} <small>(${escapeHtml(reason)})</small></div>`;
+            }).join("");
+        } catch (err) {
+            console.error(err);
+            box.innerHTML = "A mentések nem olvashatók. Ellenőrizd a Firestore jogosultságokat.";
+        }
+    }
+
+    async function createManualBackup() {
+        if (!requireFullAdmin()) return;
+        const ok = await createBackupSnapshot(db, "manual");
+        if (ok) {
+            customAlert("Kézi biztonsági mentés elkészült.");
+            await loadRecentBackups();
+        } else {
+            customAlert("Nem sikerült biztonsági mentést készíteni. Ellenőrizd a Firestore jogosultságokat.");
+        }
+    }
+
+    async function restoreBackupBySelectedTime() {
+        if (!requireFullAdmin()) return;
+        const input = document.getElementById("restoreDateTime");
+        if (!input || !input.value) return customAlert("Adj meg egy dátumot és időpontot.");
+
+        const target = new Date(input.value).getTime();
+        if (!Number.isFinite(target)) return customAlert("Érvénytelen időpont.");
+
+        try {
+            const snap = await BACKUP_COLLECTION
+                .where("createdAt", "<=", target)
+                .orderBy("createdAt", "desc")
+                .limit(1)
+                .get();
+
+            if (snap.empty) {
+                return customAlert("Ehhez az időponthoz vagy korábbra nincs elérhető biztonsági mentés.");
+            }
+
+            const backup = snap.docs[0].data() || {};
+            const backupTime = formatBackupDate(backup.createdAt);
+            if (!backup.data) return customAlert("A kiválasztott mentés sérült vagy hiányos.");
+
+            customConfirm(`A(z) ${escapeHtml(backupTime)} időpontban készült állapot lesz visszaállítva. A jelenlegi állapotról előtte automatikus mentés készül. Folytatod?`, async () => {
+                try {
+                    await createBackupSnapshot(db, "pre_restore");
+                    db = sanitizeDbForSave(backup.data);
+                    selectedAccMembers.clear();
+                    localRevision += 1;
+                    const payload = { ...db, _clientRevision: localRevision, _updatedAt: Date.now() };
+                    await DB_DOC.set(payload, { merge: false });
+                    try {
+                        localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(payload));
+                    } catch (e) {
+                        console.warn(e);
+                    }
+                    render();
+                    closeModal();
+                    customAlert(`Sikeres visszaállítás: ${backupTime}`);
+                } catch (err) {
+                    console.error("VISSZAÁLLÍTÁSI HIBA:", err);
+                    customAlert("Nem sikerült visszaállítani az adatokat: " + err.message);
+                }
+            });
+        } catch (err) {
+            console.error("MENTÉS KERESÉSI HIBA:", err);
+            customAlert("Nem sikerült lekérni a biztonsági mentést. Ellenőrizd a Firestore jogosultságokat. Hiba: " + err.message);
+        }
+    }
+
+    function save() {
+        if (!isSyncReady) {
+            customAlert("Az adatkapcsolat még nem áll készen. Próbáld újra egy pillanat múlva.");
+            return Promise.resolve(false);
+        }
+
+        db = sanitizeDbForSave(db);
+        localRevision += 1;
+        const revision = localRevision;
+        const payload = { ...db, _clientRevision: revision, _updatedAt: Date.now() };
+
+        try {
+            localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(payload));
+        } catch (e) {
+            console.warn("Helyi biztonsági mentés hiba:", e);
+        }
+
+        // Azonnal frissítjük a felületet, nem várunk a hálózatra.
+        render();
+
+        saveQueue = saveQueue
+            .catch(() => {})
+            .then(() => DB_DOC.set(payload, { merge: false }))
+            .then(async () => {
+                lastRemoteRevision = Math.max(lastRemoteRevision, revision);
+                console.log("MENTÉS SIKERES", revision);
+                await createBackupSnapshot(payload, "auto");
+                return true;
+            })
+            .catch((err) => {
+                console.error("MENTÉSI HIBA:", err);
+                customAlert("Nem sikerült a Firebase mentés. A módosítás helyben el lett mentve, de másik eszközön még nem fog látszani. Hiba: " + err.message);
+                return false;
+            });
+
+        return saveQueue;
     }
 
     function closeModal() {
@@ -2533,6 +2734,9 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
     function finalizeAccounting() {
         if (!requireAccountingAccess()) return;
+        if (!Array.isArray(db.members)) db.members = [];
+        if (!db.logs) db.logs = { trade: [], cash: [], acc: [] };
+        if (!Array.isArray(db.logs.acc)) db.logs.acc = [];
         if (selectedAccMembers.size === 0) {
             return customAlert("Válassz tagokat!");
         }
@@ -2587,7 +2791,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         }
 
         const diff = currentTrType === 'eladas' ? a : -a;
-        db.balance += diff;
+        db.balance = Number(db.balance || 0) + diff;
 
         db.logs.trade.push({
             time: nowString(),
@@ -2635,12 +2839,14 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
     function cashOp(m) {
         if (!requireFullAdmin()) return;
+        if (!db.logs) db.logs = { trade: [], cash: [], acc: [] };
+        if (!Array.isArray(db.logs.cash)) db.logs.cash = [];
         const a = parseInt(document.getElementById('cashAmt').value, 10);
         const note = document.getElementById('cashNote').value.trim() || (m === 'BE' ? 'Befizetés' : 'Kivétel');
 
         if (isNaN(a) || a <= 0) return customAlert("Adj meg egy érvényes összeget!");
 
-        db.balance += (m === 'BE' ? a : -a);
+        db.balance = Number(db.balance || 0) + (m === 'BE' ? a : -a);
 
         db.logs.cash.push({
             time: nowString(),
@@ -2674,7 +2880,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         if (!m || !m.pay || m.pay <= 0) return customAlert("Nincs mit kifizetni!");
 
         customConfirm(`Kifizetsz ${m.pay.toLocaleString()} Cs-t ${escapeHtml(m.ic)} részére?`, () => {
-            db.balance -= m.pay;
+            db.balance = Number(db.balance || 0) - Number(m.pay || 0);
 
             db.logs.cash.push({
                 time: nowString(),
@@ -2903,15 +3109,15 @@ function flashBalanceDirection(isUp) {
         }
 
         document.querySelector('#tabTrade tbody').innerHTML = (db.config.tradeItems || []).map((v, i) =>
-            `<tr><td>${escapeHtml(v)}</td><td><button onclick="removeTradeItem(${i})">X</button></td></tr>`
+            `<tr><td>${escapeHtml(v)}</td><td><button onclick="removeTradeItem(${i})">Törlés</button></td></tr>`
         ).join('');
 
         document.querySelector('#tabFrac tbody').innerHTML = (db.config.fractions || []).map((v, i) =>
-            `<tr><td>${escapeHtml(v)}</td><td><button onclick="removeFraction(${i})">X</button></td></tr>`
+            `<tr><td>${escapeHtml(v)}</td><td><button onclick="removeFraction(${i})">Törlés</button></td></tr>`
         ).join('');
 
         document.querySelector('#tabAccType tbody').innerHTML = (db.config.accTypes || []).map((v, i) =>
-            `<tr><td>${escapeHtml(v.name)}</td><td>${Number(v.price || 0).toLocaleString()} Cs</td><td><button onclick="removeAccType(${i})">X</button></td></tr>`
+            `<tr><td>${escapeHtml(v.name)}</td><td>${Number(v.price || 0).toLocaleString()} Cs</td><td><button onclick="removeAccType(${i})">Törlés</button></td></tr>`
         ).join('');
 
         const sortedMembers = (db.members || [])
@@ -2927,7 +3133,7 @@ function flashBalanceDirection(isUp) {
                 <td>${escapeHtml(m.tel || '')}</td>
                 <td>
                     <button onclick="openMemberModal(${m._originalIndex})">Szerk.</button>
-                    <button class="btn-danger" onclick="deleteMember(${m._originalIndex})">X</button>
+                    <button class="btn-danger" onclick="deleteMember(${m._originalIndex})">Törlés</button>
                 </td>
             </tr>`
         ).join('');
@@ -3031,7 +3237,7 @@ function flashBalanceDirection(isUp) {
                                 <tr>
                                     <td>${escapeHtml(c.n)}</td>
                                     <td>${escapeHtml(c.s)}</td>
-                                    <td><button onclick="deleteContact(${db.contacts.indexOf(c)})">X</button></td>
+                                    <td><button onclick="deleteContact(${db.contacts.indexOf(c)})">Törlés</button></td>
                                 </tr>
                             `).join('')}
                         </table>
@@ -3050,7 +3256,7 @@ function flashBalanceDirection(isUp) {
                             <tr>
                                 <td>${escapeHtml(c.n)}</td>
                                 <td>${escapeHtml(c.s)}</td>
-                                <td><button onclick="deleteContact(${db.contacts.indexOf(c)})">X</button></td>
+                                <td><button onclick="deleteContact(${db.contacts.indexOf(c)})">Törlés</button></td>
                             </tr>
                         `).join('')}
                     </table>
@@ -3083,7 +3289,7 @@ function flashBalanceDirection(isUp) {
                                     <div class="price-value">${Number(p.price || 0).toLocaleString()} Cs</div>
                                 </div>
         
-                                <button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">X</button>
+                                <button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">Törlés</button>
                             </div>
                         `).join('')}
         
@@ -3114,7 +3320,7 @@ function flashBalanceDirection(isUp) {
                                         <div class="price-value">${Number(p.price || 0).toLocaleString()} Cs</div>
                                     </div>
                 
-                                    <button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">X</button>
+                                    <button class="btn-danger" onclick="deletePriceItem(${db.prices.indexOf(p)})">Törlés</button>
                                 </div>
                             `).join('')}
                 
@@ -3133,7 +3339,7 @@ function flashBalanceDirection(isUp) {
             `<tr>
                 <td>${escapeHtml(b.n || '')}</td>
                 <td>${escapeHtml(b.i || '')}</td>
-                <td><button class="btn-danger" onclick="deleteBL(${i})">X</button></td>
+                <td><button class="btn-danger" onclick="deleteBL(${i})">Törlés</button></td>
             </tr>`
         ).join('');
             
@@ -3207,21 +3413,23 @@ function flashBalanceDirection(isUp) {
         document.getElementById('resetModal').style.display = 'none';
     }
 
-    function hardReset() {
+    async function hardReset() {
         if (!requireFullAdmin()) return;
-        
-        db = getDefaultDb();
-        selectedAccMembers.clear();
 
-        DB_DOC.set(db)
-            .then(() => {
-                closeResetModal();
-                customAlert("Minden adat törölve!");
-            })
-            .catch((err) => {
-                console.error(err);
-                customAlert("Hiba történt törlés közben.");
-            });
+        try {
+            await createBackupSnapshot(db, "pre_reset");
+            db = getDefaultDb();
+            selectedAccMembers.clear();
+            localRevision += 1;
+            const payload = { ...sanitizeDbForSave(db), _clientRevision: localRevision, _updatedAt: Date.now() };
+            await DB_DOC.set(payload, { merge: false });
+            closeResetModal();
+            render();
+            customAlert("Minden adat törölve! A törlés előtti állapotról biztonsági mentés készült.");
+        } catch (err) {
+            console.error(err);
+            customAlert("Hiba történt törlés közben: " + err.message);
+        }
     }
 
     function handleLoginPermissions(email) {
@@ -3245,6 +3453,12 @@ function flashBalanceDirection(isUp) {
 
         if (docSnap.exists) {
             const data = docSnap.data() || {};
+            const remoteRevision = Number(data._clientRevision || 0);
+            if (localRevision > remoteRevision && docSnap.metadata && !docSnap.metadata.hasPendingWrites) {
+                console.log("Régebbi távoli snapshot kihagyva", { localRevision, remoteRevision });
+                return;
+            }
+            lastRemoteRevision = Math.max(lastRemoteRevision, remoteRevision);
 
             db = {
                 members: Array.isArray(data.members) ? data.members : [],
@@ -3277,7 +3491,12 @@ function flashBalanceDirection(isUp) {
                 hiddenTabs: Array.isArray(data.hiddenTabs) ? data.hiddenTabs : []
             };
         } else {
-            db = getDefaultDb();
+            try {
+                const localBackup = JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY) || "null");
+                db = localBackup ? sanitizeDbForSave(localBackup) : getDefaultDb();
+            } catch (e) {
+                db = getDefaultDb();
+            }
         }
         currentUserRole = getRoleByEmail(currentUserEmail);
         buildMenu();
@@ -3560,7 +3779,7 @@ function flashBalanceDirection(isUp) {
         html += `
             <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:6px; padding:8px; background:#0c0c0c; border:1px solid #222; border-radius:8px;">
                 <span>${escapeHtml(name)} × ${qty} = ${rowTotal.toLocaleString()} Cs</span>
-                <button onclick="removeFromCart(${i})">X</button>
+                <button onclick="removeFromCart(${i})">Törlés</button>
             </div>
         `;
     });
@@ -3575,6 +3794,9 @@ function flashBalanceDirection(isUp) {
 
     function finalizeCart() {
         if (!requireAccountingAccess()) return;
+        if (!Array.isArray(db.members)) db.members = [];
+        if (!db.logs) db.logs = { trade: [], cash: [], acc: [] };
+        if (!Array.isArray(db.logs.acc)) db.logs.acc = [];
         if (!Array.isArray(db.accCart) || db.accCart.length === 0) {
             return customAlert("A kosár üres!");
         }
@@ -3839,7 +4061,7 @@ function flashBalanceDirection(isUp) {
                         <div class="inventory-actions">
                             <button onclick="changeInventoryQty(${item._index}, 1)" title="Hozzáadás">+</button>
                             <button onclick="changeInventoryQty(${item._index}, -1)" title="Kivétel">−</button>
-                            ${isFullAdmin() ? `<button onclick="openInventoryModal(${item._index})">Szerk.</button><button class="btn-danger" onclick="deleteInventoryItem(${item._index})">X</button>` : ''}
+                            ${isFullAdmin() ? `<button onclick="openInventoryModal(${item._index})">Szerk.</button><button class="btn-danger" onclick="deleteInventoryItem(${item._index})">Törlés</button>` : ''}
                         </div>
                     </td>
                 </tr>`;
@@ -4177,7 +4399,7 @@ function flashBalanceDirection(isUp) {
                                 <span class="offer-type ${offer.type === 'buy' ? 'buy' : 'sell'}">${offer.type === 'buy' ? 'VÉTEL' : 'ELADÁS'}</span>
                                 <strong>${escapeHtml(offer.item || '')}</strong>
                                 <span>${Number(offer.price || 0).toLocaleString()} Cs</span>
-                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteMafiaOffer(${mafia._index}, ${oi})">X</button>` : ''}
+                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteMafiaOffer(${mafia._index}, ${oi})">Törlés</button>` : ''}
                             </div>
                         `).join('') || `<p class="muted">Nincs rögzített ár.</p>`}
                     </div>
@@ -4216,7 +4438,7 @@ function flashBalanceDirection(isUp) {
                                 <span class="offer-type ${offer.type === 'buy' ? 'buy' : 'sell'}">${offer.type === 'buy' ? 'VÉTEL' : 'ELADÁS'}</span>
                                 <strong>${escapeHtml(offer.item || '')}</strong>
                                 <span>${Number(offer.price || 0).toLocaleString()} Cs</span>
-                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteTerritoryOffer(${territory._index}, ${oi})">X</button>` : ''}
+                                ${isFullAdmin() ? `<button class="btn-danger" onclick="deleteTerritoryOffer(${territory._index}, ${oi})">Törlés</button>` : ''}
                             </div>
                         `).join('') || `<p class="muted">Nincs rögzített ár.</p>`}
                     </div>
