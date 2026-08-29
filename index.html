@@ -2326,50 +2326,127 @@ h1.logo-graffiti[style*="font-size:100px"] {
         return MENU.filter(tab => canSeeTab(tab));
     }
     
-    function addPermissionUser() {
-        if (!requireFullAdmin()) return;
-    
-        const email = document.getElementById('permEmail').value.trim().toLowerCase();
-        const role = document.getElementById('permRole').value.trim();
-    
-        if (!email || !role) {
-            return customAlert("Adj meg email címet és rangot.");
-        }
-    
-        if (!db.permissions) db.permissions = { users: [] };
-        if (!Array.isArray(db.permissions.users)) db.permissions.users = [];
-    
-        const existingIndex = db.permissions.users.findIndex(
-            u => (u.email || "").toLowerCase() === email
-        );
-    
-        if (existingIndex > -1) {
-            db.permissions.users[existingIndex].role = role;
-        } else {
-            db.permissions.users.push({ email, role });
-        }
-    
-        document.getElementById('permEmail').value = "";
-        save();
+    function isValidEmailAddress(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || '').trim());
     }
-    
-    function deletePermissionUser(index) {
+
+    async function addPermissionUser() {
         if (!requireFullAdmin()) return;
-        if (!Array.isArray(db.permissions?.users)) return;
-        db.permissions.users.splice(index, 1);
-        save();
+
+        const emailInput = document.getElementById('permEmail');
+        const roleInput = document.getElementById('permRole');
+        const email = (emailInput?.value || '').trim().toLowerCase();
+        const role = (roleInput?.value || '').trim();
+
+        if (!email || !role) return customAlert("Adj meg email címet és rangot.");
+        if (!isValidEmailAddress(email)) return customAlert("Érvénytelen email cím.");
+        if (!RANK_ORDER.includes(role)) return customAlert("Érvénytelen rang.");
+        if (!isSyncReady) return customAlert("Az adatkapcsolat még nem áll készen. Próbáld újra.");
+
+        try {
+            await firestore.runTransaction(async transaction => {
+                const snap = await transaction.get(DB_DOC);
+                const remote = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                const clean = sanitizeDbForSave(remote);
+                if (!clean.permissions) clean.permissions = { users: [] };
+                if (!Array.isArray(clean.permissions.users)) clean.permissions.users = [];
+
+                const idx = clean.permissions.users.findIndex(
+                    u => String(u?.email || '').trim().toLowerCase() === email
+                );
+
+                const permissionEntry = {
+                    email,
+                    role,
+                    updatedAt: Date.now(),
+                    updatedBy: currentUserEmail || ''
+                };
+
+                if (idx >= 0) clean.permissions.users[idx] = { ...clean.permissions.users[idx], ...permissionEntry };
+                else clean.permissions.users.push(permissionEntry);
+
+                const remoteRevision = Number(remote._clientRevision || 0);
+                const nextRevision = Math.max(localRevision, remoteRevision) + 1;
+                clean._clientRevision = nextRevision;
+                clean._updatedAt = Date.now();
+                transaction.set(DB_DOC, clean, { merge: false });
+                localRevision = nextRevision;
+            });
+
+            if (!db.permissions) db.permissions = { users: [] };
+            if (!Array.isArray(db.permissions.users)) db.permissions.users = [];
+            const localIdx = db.permissions.users.findIndex(
+                u => String(u?.email || '').trim().toLowerCase() === email
+            );
+            const localEntry = { email, role, updatedAt: Date.now(), updatedBy: currentUserEmail || '' };
+            if (localIdx >= 0) db.permissions.users[localIdx] = { ...db.permissions.users[localIdx], ...localEntry };
+            else db.permissions.users.push(localEntry);
+
+            if (emailInput) emailInput.value = '';
+            renderAdminPanel();
+            try { localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(sanitizeDbForSave(db))); } catch (e) {}
+            createBackupSnapshot(db, 'admin_permission').catch(() => {});
+            customAlert(`Jogosultság sikeresen mentve: ${escapeHtml(email)} – ${escapeHtml(role)}`);
+        } catch (err) {
+            console.error('ADMIN JOG MENTÉSI HIBA:', err);
+            customAlert('Nem sikerült az email jogosultságát elmenteni a Firebase-be. Hiba: ' + escapeHtml(err.message || String(err)));
+        }
     }
-    
-    function toggleHiddenTab(tabId) {
+
+    async function deletePermissionUser(index) {
         if (!requireFullAdmin()) return;
-    
-        if (!Array.isArray(db.hiddenTabs)) db.hiddenTabs = [];
-    
-        const i = db.hiddenTabs.indexOf(tabId);
-        if (i > -1) db.hiddenTabs.splice(i, 1);
-        else db.hiddenTabs.push(tabId);
-    
-        save();
+        const users = Array.isArray(db.permissions?.users) ? db.permissions.users : [];
+        const target = users[index];
+        if (!target) return;
+        const targetEmail = String(target.email || '').trim().toLowerCase();
+
+        try {
+            await firestore.runTransaction(async transaction => {
+                const snap = await transaction.get(DB_DOC);
+                const remote = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                const clean = sanitizeDbForSave(remote);
+                clean.permissions.users = (clean.permissions.users || []).filter(
+                    u => String(u?.email || '').trim().toLowerCase() !== targetEmail
+                );
+                const nextRevision = Math.max(localRevision, Number(remote._clientRevision || 0)) + 1;
+                clean._clientRevision = nextRevision;
+                clean._updatedAt = Date.now();
+                transaction.set(DB_DOC, clean, { merge: false });
+                localRevision = nextRevision;
+            });
+            db.permissions.users = users.filter((_, i) => i !== index);
+            renderAdminPanel();
+        } catch (err) {
+            console.error('ADMIN JOG TÖRLÉSI HIBA:', err);
+            customAlert('Nem sikerült törölni a jogosultságot: ' + escapeHtml(err.message || String(err)));
+        }
+    }
+
+    async function toggleHiddenTab(tabId) {
+        if (!requireFullAdmin()) return;
+
+        try {
+            await firestore.runTransaction(async transaction => {
+                const snap = await transaction.get(DB_DOC);
+                const remote = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                const clean = sanitizeDbForSave(remote);
+                const tabs = Array.isArray(clean.hiddenTabs) ? [...clean.hiddenTabs] : [];
+                const i = tabs.indexOf(tabId);
+                if (i > -1) tabs.splice(i, 1); else tabs.push(tabId);
+                clean.hiddenTabs = tabs;
+                const nextRevision = Math.max(localRevision, Number(remote._clientRevision || 0)) + 1;
+                clean._clientRevision = nextRevision;
+                clean._updatedAt = Date.now();
+                transaction.set(DB_DOC, clean, { merge: false });
+                localRevision = nextRevision;
+                db.hiddenTabs = tabs;
+            });
+            buildMenu();
+            renderAdminPanel();
+        } catch (err) {
+            console.error('MENÜ LÁTHATÓSÁG MENTÉSI HIBA:', err);
+            customAlert('Nem sikerült elmenteni a menüpont beállítását: ' + escapeHtml(err.message || String(err)));
+        }
     }
     
     function renderAdminPanel() {
@@ -3454,6 +3531,7 @@ function flashBalanceDirection(isUp) {
         if (docSnap.exists) {
             const data = docSnap.data() || {};
             const remoteRevision = Number(data._clientRevision || 0);
+            localRevision = Math.max(localRevision, remoteRevision);
             if (localRevision > remoteRevision && docSnap.metadata && !docSnap.metadata.hasPendingWrites) {
                 console.log("Régebbi távoli snapshot kihagyva", { localRevision, remoteRevision });
                 return;
