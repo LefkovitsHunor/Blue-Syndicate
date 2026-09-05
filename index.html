@@ -2209,6 +2209,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
     let saveQueue = Promise.resolve();
     let localRevision = 0;
     let lastRemoteRevision = 0;
+    let lastSyncedDb = getDefaultDb();
+    let unsubscribeMainData = null;
     const LOCAL_BACKUP_KEY = "blueSyndicate_mainData_backup_v2";
 
     function getDefaultDb() {
@@ -2658,6 +2660,19 @@ h1.logo-graffiti[style*="font-size:100px"] {
         }
     }
 
+    function getChangedTopLevelKeys(current, previous) {
+        const ignored = new Set(['_clientRevision', '_updatedAt']);
+        const keys = new Set([
+            ...Object.keys(current || {}),
+            ...Object.keys(previous || {})
+        ]);
+
+        return [...keys].filter(key => {
+            if (ignored.has(key)) return false;
+            return JSON.stringify(current?.[key]) !== JSON.stringify(previous?.[key]);
+        });
+    }
+
     function save() {
         if (!isSyncReady) {
             customAlert("Az adatkapcsolat még nem áll készen. Próbáld újra egy pillanat múlva.");
@@ -2665,31 +2680,64 @@ h1.logo-graffiti[style*="font-size:100px"] {
         }
 
         db = sanitizeDbForSave(db);
-        localRevision += 1;
-        const revision = localRevision;
-        const payload = { ...db, _clientRevision: revision, _updatedAt: Date.now() };
+        const localSnapshot = sanitizeDbForSave(db);
+        const changedKeys = getChangedTopLevelKeys(localSnapshot, lastSyncedDb);
+
+        // Ha valójában semmi nem változott, ne írjuk újra az egész dokumentumot.
+        if (changedKeys.length === 0) {
+            render();
+            return Promise.resolve(true);
+        }
 
         try {
-            localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(payload));
+            localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(localSnapshot));
         } catch (e) {
             console.warn("Helyi biztonsági mentés hiba:", e);
         }
 
-        // Azonnal frissítjük a felületet, nem várunk a hálózatra.
+        // Azonnali UI-frissítés, hálózati késleltetés nélkül.
         render();
 
         saveQueue = saveQueue
             .catch(() => {})
-            .then(() => DB_DOC.set(payload, { merge: false }))
-            .then(async () => {
-                lastRemoteRevision = Math.max(lastRemoteRevision, revision);
-                console.log("MENTÉS SIKERES", revision);
-                await createBackupSnapshot(payload, "auto");
+            .then(() => firestore.runTransaction(async transaction => {
+                const snap = await transaction.get(DB_DOC);
+                const remoteRaw = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                const remote = sanitizeDbForSave(remoteRaw);
+
+                // Csak azokat a felső szintű adatcsoportokat írjuk felül,
+                // amelyeket ez a kliens ténylegesen módosított. Így pl. egy
+                // leltármentés nem törli egy másik felhasználó pénzmozgását.
+                changedKeys.forEach(key => {
+                    remote[key] = JSON.parse(JSON.stringify(localSnapshot[key]));
+                });
+
+                const remoteRevision = Number(remoteRaw._clientRevision || 0);
+                const nextRevision = Math.max(localRevision, remoteRevision) + 1;
+                remote._clientRevision = nextRevision;
+                remote._updatedAt = Date.now();
+
+                transaction.set(DB_DOC, remote, { merge: false });
+                localRevision = nextRevision;
+                return { remote, nextRevision };
+            }))
+            .then(async ({ remote, nextRevision }) => {
+                db = sanitizeDbForSave(remote);
+                lastSyncedDb = sanitizeDbForSave(remote);
+                lastRemoteRevision = Math.max(lastRemoteRevision, nextRevision);
+                try {
+                    localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(remote));
+                } catch (e) {
+                    console.warn("Helyi biztonsági mentés hiba:", e);
+                }
+                render();
+                console.log("MENTÉS SIKERES", nextRevision, changedKeys);
+                await createBackupSnapshot(remote, "auto");
                 return true;
             })
             .catch((err) => {
                 console.error("MENTÉSI HIBA:", err);
-                customAlert("Nem sikerült a Firebase mentés. A módosítás helyben el lett mentve, de másik eszközön még nem fog látszani. Hiba: " + err.message);
+                customAlert("Nem sikerült a Firebase mentés. A módosítás helyben megmaradt, de másik eszközön még nem fog látszani. Hiba: " + escapeHtml(err.message || String(err)));
                 return false;
             });
 
@@ -3428,6 +3476,10 @@ function flashBalanceDirection(isUp) {
         }
 
     function showTab(id) {
+        if (!canSeeTab(id)) {
+            customAlert("Ehhez a menüponthoz nincs jogosultságod.");
+            return;
+        }
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         const target = document.getElementById(id);
         if (target) target.classList.add('active');
@@ -3525,66 +3577,43 @@ function flashBalanceDirection(isUp) {
     }
 
     function setupRealtimeSync() {
-    DB_DOC.onSnapshot((docSnap) => {
-        isSyncReady = true;
-
-        if (docSnap.exists) {
-            const data = docSnap.data() || {};
-            const remoteRevision = Number(data._clientRevision || 0);
-            localRevision = Math.max(localRevision, remoteRevision);
-            if (localRevision > remoteRevision && docSnap.metadata && !docSnap.metadata.hasPendingWrites) {
-                console.log("Régebbi távoli snapshot kihagyva", { localRevision, remoteRevision });
-                return;
-            }
-            lastRemoteRevision = Math.max(lastRemoteRevision, remoteRevision);
-
-            db = {
-                members: Array.isArray(data.members) ? data.members : [],
-                balance: Number(data.balance || 0),
-                config: {
-                    tradeItems: Array.isArray(data.config?.tradeItems) ? data.config.tradeItems : [],
-                    fractions: Array.isArray(data.config?.fractions) ? data.config.fractions : [],
-                    accTypes: Array.isArray(data.config?.accTypes) ? data.config.accTypes : []
-                },
-                logs: {
-                    trade: Array.isArray(data.logs?.trade) ? data.logs.trade : [],
-                    cash: Array.isArray(data.logs?.cash) ? data.logs.cash : [],
-                    acc: Array.isArray(data.logs?.acc) ? data.logs.acc : []
-                },
-                contacts: Array.isArray(data.contacts) ? data.contacts : [],
-                blacklist: Array.isArray(data.blacklist) ? data.blacklist : [],
-                accCart: Array.isArray(data.accCart) ? data.accCart : [],
-                prices: Array.isArray(data.prices) ? data.prices : [],
-                inventory: Array.isArray(data.inventory) ? data.inventory : [],
-                inventoryLog: Array.isArray(data.inventoryLog) ? data.inventoryLog : [],
-                leaderChat: Array.isArray(data.leaderChat) ? data.leaderChat : [],
-                controller: {
-                    mafias: Array.isArray(data.controller?.mafias) ? data.controller.mafias : [],
-                    territories: Array.isArray(data.controller?.territories) ? data.controller.territories : [],
-                    equipment: Array.isArray(data.controller?.equipment) ? data.controller.equipment : []
-                },
-                permissions: {
-                    users: Array.isArray(data.permissions?.users) ? data.permissions.users : []
-                },
-                hiddenTabs: Array.isArray(data.hiddenTabs) ? data.hiddenTabs : []
-            };
-        } else {
-            try {
-                const localBackup = JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY) || "null");
-                db = localBackup ? sanitizeDbForSave(localBackup) : getDefaultDb();
-            } catch (e) {
-                db = getDefaultDb();
-            }
+        // Ne legyen több párhuzamos onSnapshot figyelő újrabelépéskor.
+        if (typeof unsubscribeMainData === 'function') {
+            unsubscribeMainData();
+            unsubscribeMainData = null;
         }
-        currentUserRole = getRoleByEmail(currentUserEmail);
-        buildMenu();
-        autoCleanup();
-        render();
-    }, (error) => {
-        console.error("Realtime sync hiba:", error);
-        customAlert("Nem sikerült az élő adatkapcsolat.");
-    });
-}
+
+        unsubscribeMainData = DB_DOC.onSnapshot((docSnap) => {
+            isSyncReady = true;
+
+            if (docSnap.exists) {
+                const data = docSnap.data() || {};
+                const remoteRevision = Number(data._clientRevision || 0);
+                localRevision = Math.max(localRevision, remoteRevision);
+                lastRemoteRevision = Math.max(lastRemoteRevision, remoteRevision);
+
+                db = sanitizeDbForSave(data);
+                lastSyncedDb = sanitizeDbForSave(data);
+            } else {
+                try {
+                    const localBackup = JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY) || "null");
+                    db = localBackup ? sanitizeDbForSave(localBackup) : getDefaultDb();
+                } catch (e) {
+                    db = getDefaultDb();
+                }
+                lastSyncedDb = sanitizeDbForSave(db);
+            }
+
+            currentUserRole = getRoleByEmail(currentUserEmail);
+            buildMenu();
+            autoCleanup();
+            render();
+        }, (error) => {
+            console.error("Realtime sync hiba:", error);
+            isSyncReady = false;
+            customAlert("Nem sikerült az élő adatkapcsolat. Ellenőrizd a Firestore jogosultságokat és az internetkapcsolatot.");
+        });
+    }
 
     function showLoginModal() {
         showModal(`
@@ -3618,10 +3647,22 @@ function flashBalanceDirection(isUp) {
     };
 
     function buildMenu() {
-        const visibleMenu = getVisibleMenu();
-    
-        document.getElementById('mainNav').innerHTML = visibleMenu.map(m =>
-            `<button onclick="showTab('${m}')" id="btn-${m}">${m.toUpperCase()}</button>`
+        let sectionMenu;
+
+        if (currentNavSection === 'vezetoseg') {
+            sectionMenu = ['főoldal', ...LEADERSHIP_MENU];
+        } else if (currentNavSection === 'iranyito') {
+            sectionMenu = ['főoldal', ...CONTROL_MENU];
+        } else {
+            sectionMenu = ['főoldal'];
+        }
+
+        const visibleMenu = sectionMenu.filter(tab => canSeeTab(tab));
+        const nav = document.getElementById('mainNav');
+        if (!nav) return;
+
+        nav.innerHTML = visibleMenu.map(m =>
+            `<button onclick="showTab('${m}')" id="btn-${m}">${m === 'főoldal' ? 'FŐOLDAL' : m.toUpperCase()}</button>`
         ).join('') + `<button onclick="logout()">LOGOUT</button>`;
     }
 
@@ -3826,6 +3867,7 @@ function flashBalanceDirection(isUp) {
     }
 
     function removeFromCart(i) {
+        if (!requireAccountingAccess()) return;
         if (!Array.isArray(db.accCart)) db.accCart = [];
         db.accCart.splice(i, 1);
         save();
