@@ -2212,6 +2212,10 @@ h1.logo-graffiti[style*="font-size:100px"] {
     let lastSyncedDb = getDefaultDb();
     let unsubscribeMainData = null;
     const LOCAL_BACKUP_KEY = "blueSyndicate_mainData_backup_v2";
+    const pendingTopLevelChanges = new Map();
+    let saveInProgress = false;
+    let lastBackupAt = 0;
+    const AUTO_BACKUP_INTERVAL = 5 * 60 * 1000;
 
     function getDefaultDb() {
         return {
@@ -2386,7 +2390,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
             if (emailInput) emailInput.value = '';
             renderAdminPanel();
-            try { localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(sanitizeDbForSave(db))); } catch (e) {}
+            writeLocalRecoveryCopy(db);
             createBackupSnapshot(db, 'admin_permission').catch(() => {});
             customAlert(`Jogosultság sikeresen mentve: ${escapeHtml(email)} – ${escapeHtml(role)}`);
         } catch (err) {
@@ -2636,16 +2640,14 @@ h1.logo-graffiti[style*="font-size:100px"] {
             customConfirm(`A(z) ${escapeHtml(backupTime)} időpontban készült állapot lesz visszaállítva. A jelenlegi állapotról előtte automatikus mentés készül. Folytatod?`, async () => {
                 try {
                     await createBackupSnapshot(db, "pre_restore");
+                    pendingTopLevelChanges.clear();
                     db = sanitizeDbForSave(backup.data);
                     selectedAccMembers.clear();
                     localRevision += 1;
                     const payload = { ...db, _clientRevision: localRevision, _updatedAt: Date.now() };
                     await DB_DOC.set(payload, { merge: false });
-                    try {
-                        localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(payload));
-                    } catch (e) {
-                        console.warn(e);
-                    }
+                    lastSyncedDb = sanitizeDbForSave(payload);
+                    writeLocalRecoveryCopy(payload);
                     render();
                     closeModal();
                     customAlert(`Sikeres visszaállítás: ${backupTime}`);
@@ -2673,6 +2675,102 @@ h1.logo-graffiti[style*="font-size:100px"] {
         });
     }
 
+    function cloneValue(value) {
+        return JSON.parse(JSON.stringify(value));
+    }
+
+    function writeLocalRecoveryCopy(source) {
+        try {
+            localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify({
+                version: 3,
+                savedAt: Date.now(),
+                data: sanitizeDbForSave(source)
+            }));
+            return true;
+        } catch (err) {
+            console.warn("Helyi biztonsági mentés hiba:", err);
+            return false;
+        }
+    }
+
+    function readLocalRecoveryCopy() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY) || "null");
+            if (!parsed) return null;
+            return sanitizeDbForSave(parsed.data && typeof parsed.data === "object" ? parsed.data : parsed);
+        } catch (err) {
+            console.warn("A helyi biztonsági mentés nem olvasható:", err);
+            return null;
+        }
+    }
+
+    function mergeRemoteWithPending(remoteSource) {
+        const merged = sanitizeDbForSave(remoteSource);
+        pendingTopLevelChanges.forEach((value, key) => {
+            merged[key] = cloneValue(value);
+        });
+        return sanitizeDbForSave(merged);
+    }
+
+    async function flushPendingChanges() {
+        if (saveInProgress || pendingTopLevelChanges.size === 0) return true;
+        saveInProgress = true;
+
+        try {
+            while (pendingTopLevelChanges.size > 0) {
+                const batch = new Map();
+                pendingTopLevelChanges.forEach((value, key) => batch.set(key, cloneValue(value)));
+
+                const result = await firestore.runTransaction(async transaction => {
+                    const snap = await transaction.get(DB_DOC);
+                    const remoteRaw = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                    const remote = sanitizeDbForSave(remoteRaw);
+
+                    batch.forEach((value, key) => {
+                        remote[key] = cloneValue(value);
+                    });
+
+                    const remoteRevision = Number(remoteRaw._clientRevision || 0);
+                    const nextRevision = Math.max(localRevision, remoteRevision) + 1;
+                    remote._clientRevision = nextRevision;
+                    remote._updatedAt = Date.now();
+                    transaction.set(DB_DOC, remote, { merge: false });
+                    return { remote, nextRevision };
+                });
+
+                batch.forEach((savedValue, key) => {
+                    const newestValue = pendingTopLevelChanges.get(key);
+                    if (newestValue !== undefined && JSON.stringify(newestValue) === JSON.stringify(savedValue)) {
+                        pendingTopLevelChanges.delete(key);
+                    }
+                });
+
+                localRevision = result.nextRevision;
+                lastRemoteRevision = Math.max(lastRemoteRevision, result.nextRevision);
+                lastSyncedDb = sanitizeDbForSave(result.remote);
+                db = mergeRemoteWithPending(result.remote);
+                writeLocalRecoveryCopy(db);
+                render();
+
+                if (Date.now() - lastBackupAt >= AUTO_BACKUP_INTERVAL) {
+                    lastBackupAt = Date.now();
+                    createBackupSnapshot(result.remote, "auto").catch(() => {});
+                }
+            }
+            return true;
+        } catch (err) {
+            console.error("MENTÉSI HIBA:", err);
+            writeLocalRecoveryCopy(db);
+            customAlert("Nem sikerült a felhőmentés. Az adatok ezen az eszközön megmaradtak, és a rendszer a következő módosításnál újra próbálkozik. Hiba: " + escapeHtml(err.message || String(err)));
+            return false;
+        } finally {
+            saveInProgress = false;
+            if (pendingTopLevelChanges.size > 0) {
+                setTimeout(() => flushPendingChanges(), 1500);
+            }
+        }
+    }
+
     function save() {
         if (!isSyncReady) {
             customAlert("Az adatkapcsolat még nem áll készen. Próbáld újra egy pillanat múlva.");
@@ -2681,7 +2779,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
         db = sanitizeDbForSave(db);
         const localSnapshot = sanitizeDbForSave(db);
-        const changedKeys = getChangedTopLevelKeys(localSnapshot, lastSyncedDb);
+        const comparisonBase = mergeRemoteWithPending(lastSyncedDb);
+        const changedKeys = getChangedTopLevelKeys(localSnapshot, comparisonBase);
 
         // Ha valójában semmi nem változott, ne írjuk újra az egész dokumentumot.
         if (changedKeys.length === 0) {
@@ -2689,57 +2788,13 @@ h1.logo-graffiti[style*="font-size:100px"] {
             return Promise.resolve(true);
         }
 
-        try {
-            localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(localSnapshot));
-        } catch (e) {
-            console.warn("Helyi biztonsági mentés hiba:", e);
-        }
+        changedKeys.forEach(key => pendingTopLevelChanges.set(key, cloneValue(localSnapshot[key])));
+        writeLocalRecoveryCopy(localSnapshot);
 
         // Azonnali UI-frissítés, hálózati késleltetés nélkül.
         render();
 
-        saveQueue = saveQueue
-            .catch(() => {})
-            .then(() => firestore.runTransaction(async transaction => {
-                const snap = await transaction.get(DB_DOC);
-                const remoteRaw = snap.exists ? (snap.data() || {}) : getDefaultDb();
-                const remote = sanitizeDbForSave(remoteRaw);
-
-                // Csak azokat a felső szintű adatcsoportokat írjuk felül,
-                // amelyeket ez a kliens ténylegesen módosított. Így pl. egy
-                // leltármentés nem törli egy másik felhasználó pénzmozgását.
-                changedKeys.forEach(key => {
-                    remote[key] = JSON.parse(JSON.stringify(localSnapshot[key]));
-                });
-
-                const remoteRevision = Number(remoteRaw._clientRevision || 0);
-                const nextRevision = Math.max(localRevision, remoteRevision) + 1;
-                remote._clientRevision = nextRevision;
-                remote._updatedAt = Date.now();
-
-                transaction.set(DB_DOC, remote, { merge: false });
-                localRevision = nextRevision;
-                return { remote, nextRevision };
-            }))
-            .then(async ({ remote, nextRevision }) => {
-                db = sanitizeDbForSave(remote);
-                lastSyncedDb = sanitizeDbForSave(remote);
-                lastRemoteRevision = Math.max(lastRemoteRevision, nextRevision);
-                try {
-                    localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify(remote));
-                } catch (e) {
-                    console.warn("Helyi biztonsági mentés hiba:", e);
-                }
-                render();
-                console.log("MENTÉS SIKERES", nextRevision, changedKeys);
-                await createBackupSnapshot(remote, "auto");
-                return true;
-            })
-            .catch((err) => {
-                console.error("MENTÉSI HIBA:", err);
-                customAlert("Nem sikerült a Firebase mentés. A módosítás helyben megmaradt, de másik eszközön még nem fog látszani. Hiba: " + escapeHtml(err.message || String(err)));
-                return false;
-            });
+        saveQueue = saveQueue.catch(() => false).then(() => flushPendingChanges());
 
         return saveQueue;
     }
@@ -3514,23 +3569,9 @@ function flashBalanceDirection(isUp) {
     }
 
     function autoCleanup() {
-        const twoWeeks = 14 * 24 * 60 * 60 * 1000;
-        const now = Date.now();
-        let changed = false;
-
-        db.members.forEach(m => {
-            if (m.pay > 0 && m.payDate) {
-                if (now - m.payDate > twoWeeks) {
-                    m.pay = 0;
-                    m.payDate = null;
-                    m.isDone = false;
-                    m.reqPay = null;
-                    changed = true;
-                }
-            }
-        });
-
-        if (changed) save();
+        // Adatot soha nem törlünk automatikusan. A korábbi verzió 14 nap után
+        // lenullázta a tagok kifizetési adatait, ami adatvesztésnek látszott.
+        return false;
     }
 
     function openResetModal() {
@@ -3547,11 +3588,14 @@ function flashBalanceDirection(isUp) {
 
         try {
             await createBackupSnapshot(db, "pre_reset");
+            pendingTopLevelChanges.clear();
             db = getDefaultDb();
             selectedAccMembers.clear();
             localRevision += 1;
             const payload = { ...sanitizeDbForSave(db), _clientRevision: localRevision, _updatedAt: Date.now() };
             await DB_DOC.set(payload, { merge: false });
+            lastSyncedDb = sanitizeDbForSave(payload);
+            writeLocalRecoveryCopy(payload);
             closeResetModal();
             render();
             customAlert("Minden adat törölve! A törlés előtti állapotról biztonsági mentés készült.");
@@ -3592,16 +3636,17 @@ function flashBalanceDirection(isUp) {
                 localRevision = Math.max(localRevision, remoteRevision);
                 lastRemoteRevision = Math.max(lastRemoteRevision, remoteRevision);
 
-                db = sanitizeDbForSave(data);
+                db = mergeRemoteWithPending(data);
                 lastSyncedDb = sanitizeDbForSave(data);
+                writeLocalRecoveryCopy(db);
             } else {
-                try {
-                    const localBackup = JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY) || "null");
-                    db = localBackup ? sanitizeDbForSave(localBackup) : getDefaultDb();
-                } catch (e) {
-                    db = getDefaultDb();
-                }
+                const localBackup = readLocalRecoveryCopy();
+                db = localBackup || getDefaultDb();
                 lastSyncedDb = sanitizeDbForSave(db);
+                Object.keys(db).forEach(key => {
+                    if (!key.startsWith('_')) pendingTopLevelChanges.set(key, cloneValue(db[key]));
+                });
+                saveQueue = saveQueue.catch(() => false).then(() => flushPendingChanges());
             }
 
             currentUserRole = getRoleByEmail(currentUserEmail);
