@@ -2607,6 +2607,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     const pendingTopLevelChanges = new Map();
     let saveInProgress = false;
     let lastBackupAt = 0;
+    let lastSaveErrorAt = 0;
     const AUTO_BACKUP_INTERVAL = 5 * 60 * 1000;
 
     function getDefaultDb() {
@@ -3153,22 +3154,21 @@ h1.logo-graffiti[style*="font-size:100px"] {
         } catch (err) {
             console.error("MENTÉSI HIBA:", err);
             writeLocalRecoveryCopy(db);
-            customAlert("Nem sikerült a felhőmentés. Az adatok ezen az eszközön megmaradtak, és a rendszer a következő módosításnál újra próbálkozik. Hiba: " + escapeHtml(err.message || String(err)));
+            const now = Date.now();
+            if (now - lastSaveErrorAt > 15000) {
+                lastSaveErrorAt = now;
+                customAlert("Nem sikerült a felhőmentés. Az adatok ezen az eszközön megmaradtak, és a rendszer automatikusan újrapróbálja. Hiba: " + escapeHtml(err.message || String(err)));
+            }
             return false;
         } finally {
             saveInProgress = false;
             if (pendingTopLevelChanges.size > 0) {
-                setTimeout(() => flushPendingChanges(), 1500);
+                setTimeout(() => flushPendingChanges(), 5000);
             }
         }
     }
 
     function save() {
-        if (!isSyncReady) {
-            customAlert("Az adatkapcsolat még nem áll készen. Próbáld újra egy pillanat múlva.");
-            return Promise.resolve(false);
-        }
-
         db = sanitizeDbForSave(db);
         const localSnapshot = sanitizeDbForSave(db);
         const comparisonBase = mergeRemoteWithPending(lastSyncedDb);
@@ -3186,8 +3186,34 @@ h1.logo-graffiti[style*="font-size:100px"] {
         // Azonnali UI-frissítés, hálózati késleltetés nélkül.
         render();
 
+        if (!isSyncReady) {
+            console.warn("A módosítás helyben és a mentési várólistán maradt, amíg vissza nem tér a kapcsolat.");
+            return Promise.resolve(false);
+        }
+
         saveQueue = saveQueue.catch(() => false).then(() => flushPendingChanges());
 
+        return saveQueue;
+    }
+
+    function saveSections(sectionNames) {
+        db = sanitizeDbForSave(db);
+        const keys = [...new Set(sectionNames || [])].filter(key =>
+            key && !key.startsWith('_') && Object.prototype.hasOwnProperty.call(db, key)
+        );
+
+        if (keys.length === 0) return Promise.resolve(false);
+
+        keys.forEach(key => pendingTopLevelChanges.set(key, cloneValue(db[key])));
+        writeLocalRecoveryCopy(db);
+        render();
+
+        if (!isSyncReady) {
+            console.warn("A célzott mentés várólistára került:", keys);
+            return Promise.resolve(false);
+        }
+
+        saveQueue = saveQueue.catch(() => false).then(() => flushPendingChanges());
         return saveQueue;
     }
 
@@ -3314,7 +3340,10 @@ h1.logo-graffiti[style*="font-size:100px"] {
         }
 
         const sel = document.getElementById('selAccType');
-        const price = parseInt(sel.value, 10);
+        if (!sel || sel.selectedIndex < 0 || !sel.options[sel.selectedIndex]) {
+            return customAlert("Előbb adj hozzá legalább egy könyvelési típust az Admin panelen.");
+        }
+        const price = Number(sel.value);
         const qty = parseInt(document.getElementById('inAccQty').value, 10);
 
         if (isNaN(price) || isNaN(qty) || qty <= 0) {
@@ -3334,16 +3363,19 @@ h1.logo-graffiti[style*="font-size:100px"] {
         });
 
         db.logs.acc.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
             time: nowString(),
+            ts: Date.now(),
             type: sel.options[sel.selectedIndex]?.text || '',
             total,
             peps: peps.join(', '),
-            share
+            share,
+            createdBy: currentUserEmail || ''
         });
 
         selectedAccMembers.clear();
         document.getElementById('inAccQty').value = 1;
-        save();
+        saveSections(['members', 'logs']);
     }
 
     function setTrType(t) {
@@ -4045,6 +4077,9 @@ function flashBalanceDirection(isUp) {
             buildMenu();
             autoCleanup();
             render();
+            if (pendingTopLevelChanges.size > 0 && !saveInProgress) {
+                saveQueue = saveQueue.catch(() => false).then(() => flushPendingChanges());
+            }
         }, (error) => {
             console.error("Realtime sync hiba:", error);
             isSyncReady = false;
@@ -4284,7 +4319,10 @@ function flashBalanceDirection(isUp) {
     function addToCart() {
         if (!requireAccountingAccess()) return;
         const sel = document.getElementById('selAccType');
-        const price = parseInt(sel.value, 10);
+        if (!sel || sel.selectedIndex < 0 || !sel.options[sel.selectedIndex]) {
+            return customAlert("Nincs kiválasztható könyvelési típus. Adj hozzá egyet az Admin panelen.");
+        }
+        const price = Number(sel.value);
         const qty = parseInt(document.getElementById('inAccQty').value, 10);
     
         if (isNaN(price) || isNaN(qty) || qty <= 0) {
@@ -4294,20 +4332,23 @@ function flashBalanceDirection(isUp) {
         if (!Array.isArray(db.accCart)) db.accCart = [];
     
         db.accCart.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
             name: sel.options[sel.selectedIndex].text,
             price,
-            qty
+            qty,
+            addedBy: currentUserEmail || '',
+            addedAt: Date.now()
         });
     
         document.getElementById('inAccQty').value = 1;
-        save();
+        saveSections(['accCart']);
     }
 
     function removeFromCart(i) {
         if (!requireAccountingAccess()) return;
         if (!Array.isArray(db.accCart)) db.accCart = [];
         db.accCart.splice(i, 1);
-        save();
+        saveSections(['accCart']);
     }
 
     function renderCart() {
@@ -4362,11 +4403,24 @@ function flashBalanceDirection(isUp) {
             return customAlert("Válassz tagokat!");
         }
     
-        const total = db.accCart.reduce((sum, item) => sum + (item.price * item.qty), 0);
-        const share = Math.floor((total * 0.4) / selectedAccMembers.size);
-        const peps = Array.from(selectedAccMembers).map(idx => db.members[idx]?.nick || db.members[idx]?.ic).filter(Boolean);
+        const validMemberIndexes = Array.from(selectedAccMembers).filter(idx => db.members[idx]);
+        if (validMemberIndexes.length === 0) {
+            selectedAccMembers.clear();
+            render();
+            return customAlert("A kijelölt tagok már nem találhatók. Válaszd ki őket újra.");
+        }
+
+        const total = db.accCart.reduce((sum, item) => {
+            const price = Number(item?.price || 0);
+            const qty = Number(item?.qty || 0);
+            return sum + (Number.isFinite(price * qty) ? price * qty : 0);
+        }, 0);
+        if (!Number.isFinite(total) || total <= 0) return customAlert("A könyvelési összeg érvénytelen.");
+
+        const share = Math.floor((total * 0.4) / validMemberIndexes.length);
+        const peps = validMemberIndexes.map(idx => db.members[idx]?.nick || db.members[idx]?.ic).filter(Boolean);
         
-        selectedAccMembers.forEach(idx => {
+        validMemberIndexes.forEach(idx => {
             if (!db.members[idx]) return;
             db.members[idx].pay = (db.members[idx].pay || 0) + share;
             db.members[idx].payDate = Date.now();
@@ -4375,17 +4429,20 @@ function flashBalanceDirection(isUp) {
         });
     
         db.logs.acc.push({
+            id: Date.now() + Math.floor(Math.random() * 1000),
             time: nowString(),
+            ts: Date.now(),
             type: "Kosár (" + db.accCart.length + " tétel)",
             total,
             peps: peps.join(', '),
-            share
+            share,
+            createdBy: currentUserEmail || ''
         });
     
     
         db.accCart = [];
         selectedAccMembers.clear();
-        save();
+        saveSections(['members', 'logs', 'accCart']);
     }
 
     function getInventoryEditorName() {
@@ -4486,7 +4543,7 @@ function flashBalanceDirection(isUp) {
         }
 
         closeModal();
-        save();
+        saveSections(['inventory', 'inventoryLog']);
     }
 
     function changeInventoryQty(index, direction) {
@@ -4538,7 +4595,7 @@ function flashBalanceDirection(isUp) {
         });
 
         closeModal();
-        save();
+        saveSections(['inventory', 'inventoryLog']);
     }
 
     function deleteInventoryItem(index) {
@@ -4561,7 +4618,7 @@ function flashBalanceDirection(isUp) {
                 note: 'Tétel törölve a leltárból'
             });
             db.inventory.splice(index, 1);
-            save();
+            saveSections(['inventory', 'inventoryLog']);
         });
     }
 
