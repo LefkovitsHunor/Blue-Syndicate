@@ -1809,6 +1809,25 @@ h1.logo-graffiti[style*="font-size:100px"] {
     .mentor-badge { display:inline-block; padding:4px 8px; border:1px solid #333; border-radius:999px; font-size:11px; margin-top:5px; }
     .mentor-note { white-space:pre-line; color:#ddd; line-height:1.5; margin-top:12px; }
     @media (max-width: 900px) { .mentor-grid { grid-template-columns: 1fr; } }
+    .mentor-task-section { margin-top: 24px; }
+    .mentor-task-grid { display:grid; grid-template-columns:minmax(280px,420px) minmax(0,1fr); gap:20px; align-items:start; }
+    .mentor-task-list { display:grid; gap:12px; }
+    .mentor-task-card { background:#101010; border:1px solid #2a2a2a; border-radius:12px; padding:16px; }
+    .mentor-task-card h4 { margin:0 0 8px; color:#fff; font-size:18px; }
+    .mentor-task-results { display:grid; gap:7px; margin-top:12px; }
+    .mentor-task-result { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px 10px; border:1px solid #292929; border-radius:8px; background:#0b0b0b; }
+    .mentor-task-result.success { border-color:rgba(57,255,20,.45); }
+    .mentor-task-result.failed { border-color:rgba(255,49,49,.5); }
+    .mentor-task-status { font-weight:700; }
+    .mentor-task-result.success .mentor-task-status { color:var(--neon-green); }
+    .mentor-task-result.failed .mentor-task-status { color:var(--neon-red); }
+    @media (max-width:900px) { .mentor-task-grid { grid-template-columns:1fr; } }
+
+    .mentor-task-editor {
+        background:#0b0b0b; border:1px solid #252525; border-radius:10px; padding:14px; margin-bottom:14px;
+    }
+    .mentor-task-editor textarea { min-height:120px; resize:vertical; line-height:1.5; }
+    .mentor-task-description { margin:10px 0; padding:12px; background:#090909; border-left:3px solid var(--primary-blue); border-radius:6px; color:#ddd; line-height:1.5; }
 
     /* ===== BLUE SYNDICATE HEIST / HACK INTRO ===== */
     .heist-intro {
@@ -2294,6 +2313,34 @@ h1.logo-graffiti[style*="font-size:100px"] {
                 <div id="mentorList" class="mentor-list"></div>
             </div>
         </div>
+
+        <div class="mentor-task-section">
+            <div class="section-head"><h3>Mentor feladatok</h3></div>
+            <div class="mentor-task-grid">
+                <div class="dashboard-card">
+                    <h3>10 feladat</h3>
+                    <p class="muted">Írd be a mentorprogram feladatait. A módosítások a közös mentésbe kerülnek.</p>
+                    <div id="mentorTaskInputs"></div>
+                    <button class="btn-primary" style="width:100%" onclick="saveMentorTasks()">FELADATOK MENTÉSE</button>
+                </div>
+                <div>
+                    <div class="dashboard-card">
+                        <h3>Teljesítés rögzítése</h3>
+                        <label>Aktív mentorált</label>
+                        <select id="mentorTaskMentee"></select>
+                        <label>Feladat</label>
+                        <select id="mentorTaskSelect"></select>
+                        <label>Eredmény</label>
+                        <select id="mentorTaskResult">
+                            <option value="success">Sikeres</option>
+                            <option value="failed">Sikertelen</option>
+                        </select>
+                        <button class="btn-primary" style="width:100%" onclick="saveMentorTaskResult()">EREDMÉNY MENTÉSE</button>
+                    </div>
+                    <div id="mentorTaskList" class="mentor-task-list"></div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div id="admin-panel" class="tab-content">
@@ -2669,6 +2716,9 @@ h1.logo-graffiti[style*="font-size:100px"] {
             hiddenTabs: [],
             leaderChat: [],
             mentorships: [],
+            mentorTasks: Array.from({ length: 10 }, () => ''),
+            mentorTaskDescriptions: Array.from({ length: 10 }, () => ''),
+            mentorTaskResults: [],
             controller: {
                 mafias: [],
                 territories: [],
@@ -2953,6 +3003,11 @@ h1.logo-graffiti[style*="font-size:100px"] {
         merged.blacklist = Array.isArray(merged.blacklist) ? merged.blacklist : [];
         merged.leaderChat = Array.isArray(merged.leaderChat) ? merged.leaderChat : [];
         merged.mentorships = Array.isArray(merged.mentorships) ? merged.mentorships : [];
+        merged.mentorTasks = Array.isArray(merged.mentorTasks) ? merged.mentorTasks.slice(0, 10).map(x => String(x || '')) : [];
+        while (merged.mentorTasks.length < 10) merged.mentorTasks.push('');
+        merged.mentorTaskDescriptions = Array.isArray(merged.mentorTaskDescriptions) ? merged.mentorTaskDescriptions.slice(0, 10).map(x => String(x || '')) : [];
+        while (merged.mentorTaskDescriptions.length < 10) merged.mentorTaskDescriptions.push('');
+        merged.mentorTaskResults = Array.isArray(merged.mentorTaskResults) ? merged.mentorTaskResults : [];
         merged.permissions = { users: Array.isArray(merged.permissions?.users) ? merged.permissions.users : [] };
         merged.hiddenTabs = Array.isArray(merged.hiddenTabs) ? merged.hiddenTabs : [];
         merged.controller = {
@@ -5388,6 +5443,122 @@ function flashBalanceDirection(isUp) {
         });
     }
 
+    function getActiveMentorships() {
+        return (Array.isArray(db.mentorships) ? db.mentorships : []).filter(item => {
+            if (!item) return false;
+            if (!item.expiresAt) return true;
+            const end = new Date(item.expiresAt + 'T23:59:59');
+            return Number.isNaN(end.getTime()) || end.getTime() >= Date.now();
+        });
+    }
+
+    function renderMentorTasks() {
+        const inputs = document.getElementById('mentorTaskInputs');
+        if (inputs) {
+            const tasks = Array.isArray(db.mentorTasks) ? db.mentorTasks : [];
+            const descriptions = Array.isArray(db.mentorTaskDescriptions) ? db.mentorTaskDescriptions : [];
+            inputs.innerHTML = Array.from({ length: 10 }, (_, i) => `
+                <div class="mentor-task-editor">
+                    <label>${i + 1}. feladat neve</label>
+                    <input type="text" id="mentorTaskInput${i}" maxlength="180" value="${escapeAttr(tasks[i] || '')}" placeholder="${i + 1}. mentor feladat">
+                    <label>Részletes feladatleírás</label>
+                    <textarea id="mentorTaskDescription${i}" rows="5" maxlength="3000" placeholder="Írd le részletesen, mit kell teljesíteni, mire kell figyelni, mik a feltételek...">${escapeHtml(descriptions[i] || '')}</textarea>
+                </div>
+            `).join('');
+        }
+
+        const menteeSelect = document.getElementById('mentorTaskMentee');
+        const taskSelect = document.getElementById('mentorTaskSelect');
+        if (menteeSelect) {
+            const old = menteeSelect.value;
+            const active = getActiveMentorships();
+            menteeSelect.innerHTML = `<option value="">Válassz aktív mentoráltat...</option>` + active.map(item =>
+                `<option value="${escapeAttr(item.id)}">${escapeHtml(item.menteeName || 'Ismeretlen')} – mentor: ${escapeHtml(item.mentorName || 'Ismeretlen')}</option>`
+            ).join('');
+            if ([...menteeSelect.options].some(o => o.value === old)) menteeSelect.value = old;
+        }
+        if (taskSelect) {
+            const old = taskSelect.value;
+            const tasks = Array.isArray(db.mentorTasks) ? db.mentorTasks : [];
+            taskSelect.innerHTML = `<option value="">Válassz feladatot...</option>` + tasks.map((task, i) => task.trim()
+                ? `<option value="${i}">${i + 1}. ${escapeHtml(task)}</option>` : '').join('');
+            if ([...taskSelect.options].some(o => o.value === old)) taskSelect.value = old;
+        }
+
+        const list = document.getElementById('mentorTaskList');
+        if (!list) return;
+        const results = Array.isArray(db.mentorTaskResults) ? db.mentorTaskResults : [];
+        const activeIds = new Set(getActiveMentorships().map(x => String(x.id)));
+        const visible = results.filter(r => activeIds.has(String(r.mentorshipId))).slice().sort((a,b) => Number(b.updatedAt||0)-Number(a.updatedAt||0));
+        list.innerHTML = visible.map(r => {
+            const cls = r.result === 'success' ? 'success' : 'failed';
+            const label = r.result === 'success' ? 'SIKERES' : 'SIKERTELEN';
+            return `<div class="mentor-task-card">
+                <h4>${escapeHtml(r.menteeName || 'Ismeretlen mentorált')}</h4>
+                <div class="muted">${Number(r.taskIndex) + 1}. feladat: ${escapeHtml(r.taskText || '')}</div>
+                ${r.taskDescription ? `<div class="mentor-task-description"><strong>Feladat leírása:</strong><br>${escapeHtml(r.taskDescription).replace(/\n/g, '<br>')}</div>` : ''}
+                <div class="mentor-task-results">
+                    <div class="mentor-task-result ${cls}">
+                        <span class="mentor-task-status">${label}</span>
+                        <button class="btn-danger" onclick="deleteMentorTaskResult('${escapeAttr(r.id)}')">Törlés</button>
+                    </div>
+                </div>
+                <small class="muted">${r.updatedAt ? escapeHtml(new Date(r.updatedAt).toLocaleString('hu-HU')) : ''}${r.updatedBy ? ' • ' + escapeHtml(r.updatedBy) : ''}</small>
+            </div>`;
+        }).join('') || `<p class="muted">Még nincs rögzített feladatteljesítés.</p>`;
+    }
+
+    function saveMentorTasks() {
+        db.mentorTasks = Array.from({ length: 10 }, (_, i) => (document.getElementById(`mentorTaskInput${i}`)?.value || '').trim());
+        db.mentorTaskDescriptions = Array.from({ length: 10 }, (_, i) => (document.getElementById(`mentorTaskDescription${i}`)?.value || '').trim());
+        // A korábbi eredmények feladatszövegét nem írjuk át; azok történeti eredmények maradnak.
+        saveSections(['mentorTasks', 'mentorTaskDescriptions']);
+        renderMentorTasks();
+        customAlert('A 10 mentor feladat elmentve.');
+    }
+
+    function saveMentorTaskResult() {
+        const mentorshipId = document.getElementById('mentorTaskMentee')?.value || '';
+        const taskValue = document.getElementById('mentorTaskSelect')?.value ?? '';
+        const result = document.getElementById('mentorTaskResult')?.value || 'success';
+        if (!mentorshipId || taskValue === '') return customAlert('Válaszd ki a mentoráltat és a feladatot.');
+        const taskIndex = Number(taskValue);
+        const mentorship = getActiveMentorships().find(x => String(x.id) === String(mentorshipId));
+        if (!mentorship) return customAlert('Ez a mentorálás már nem aktív.');
+        const taskText = String(db.mentorTasks?.[taskIndex] || '').trim();
+        const taskDescription = String(db.mentorTaskDescriptions?.[taskIndex] || '').trim();
+        if (!taskText) return customAlert('A kiválasztott feladat nincs kitöltve.');
+        if (!Array.isArray(db.mentorTaskResults)) db.mentorTaskResults = [];
+        const existing = db.mentorTaskResults.findIndex(r => String(r.mentorshipId) === String(mentorshipId) && Number(r.taskIndex) === taskIndex);
+        const previous = existing >= 0 ? db.mentorTaskResults[existing] : null;
+        const entry = {
+            id: previous?.id || `${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+            mentorshipId,
+            menteeName: mentorship.menteeName || '',
+            mentorName: mentorship.mentorName || '',
+            taskIndex,
+            taskText,
+            taskDescription,
+            result: result === 'failed' ? 'failed' : 'success',
+            updatedAt: Date.now(),
+            updatedBy: currentUserEmail || ''
+        };
+        if (existing >= 0) db.mentorTaskResults[existing] = entry;
+        else db.mentorTaskResults.push(entry);
+        saveSections(['mentorTaskResults']);
+        renderMentorTasks();
+    }
+
+    function deleteMentorTaskResult(id) {
+        const item = (db.mentorTaskResults || []).find(x => String(x.id) === String(id));
+        if (!item) return;
+        customConfirm(`Biztosan törlöd ${escapeHtml(item.menteeName || 'a mentorált')} feladateredményét?`, () => {
+            db.mentorTaskResults = (db.mentorTaskResults || []).filter(x => String(x.id) !== String(id));
+            saveSections(['mentorTaskResults']);
+            renderMentorTasks();
+        });
+    }
+
     function renderMentor() {
         populateMentorSelects();
         const list = document.getElementById('mentorList');
@@ -5417,6 +5588,7 @@ function flashBalanceDirection(isUp) {
                 <small class="muted">Utolsó módosítás: ${escapeHtml(updated)}${item.updatedBy ? ' • ' + escapeHtml(item.updatedBy) : ''}</small>
             </div>`;
         }).join('') || `<p class="muted">Még nincs rögzített mentorálás.</p>`;
+        renderMentorTasks();
     }
 
     function sendLeaderMessage() {
