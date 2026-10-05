@@ -1791,6 +1791,25 @@ h1.logo-graffiti[style*="font-size:100px"] {
         100% { opacity: 0; transform: translate3d(var(--drift), 112vh, 0) rotate(520deg); }
     }
 
+    /* ===== MENTOR RÉSZ ===== */
+    .mentor-grid {
+        display: grid;
+        grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+        gap: 20px;
+        align-items: start;
+    }
+    .mentor-list { display: grid; gap: 12px; }
+    .mentor-card {
+        background: #101010; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px;
+    }
+    .mentor-card.expired { border-color: rgba(255,49,49,.65); }
+    .mentor-card.soon { border-color: rgba(255,210,77,.65); }
+    .mentor-card-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+    .mentor-card-title { color:#fff; font-size:19px; font-weight:700; }
+    .mentor-badge { display:inline-block; padding:4px 8px; border:1px solid #333; border-radius:999px; font-size:11px; margin-top:5px; }
+    .mentor-note { white-space:pre-line; color:#ddd; line-height:1.5; margin-top:12px; }
+    @media (max-width: 900px) { .mentor-grid { grid-template-columns: 1fr; } }
+
     /* ===== BLUE SYNDICATE HEIST / HACK INTRO ===== */
     .heist-intro {
         position: fixed;
@@ -2036,25 +2055,6 @@ h1.logo-graffiti[style*="font-size:100px"] {
     <div id="főoldal" class="tab-content active">
         <h1 class="logo-graffiti main-title">Blue Syndicate</h1>
     
-        <div class="music-player">
-            <h3>Zenelejátszó</h3>
-            <div class="music-title" id="musicTitle">Nincs kiválasztva</div>
-    
-            <div class="music-controls">
-                <button onclick="prevTrack()">⏮</button>
-                <button onclick="toggleMusic()" id="playPauseBtn">▶</button>
-                <button onclick="nextTrack()">⏭</button>
-            </div>
-    
-            <div class="music-volume">
-                <label for="musicVolume">Hangerő</label>
-                <input type="range" id="musicVolume" min="0" max="1" step="0.01" value="0.5" oninput="setMusicVolume(this.value)">
-            </div>
-    
-            <div class="music-list" id="musicList"></div>
-    
-            <audio id="bgMusic"></audio>
-        </div>
 
         <div class="home-hub">
             <div class="hub-card">
@@ -2067,6 +2067,12 @@ h1.logo-graffiti[style*="font-size:100px"] {
                 <h3>Irányító</h3>
                 <p>Maffiák, területek, adás-vételi árak és szükséges felszerelések kezelése.</p>
                 <button class="btn-primary" onclick="openSection('iranyito')">IRÁNYÍTÓ MEGNYITÁSA</button>
+            </div>
+
+            <div class="hub-card">
+                <h3>Mentor</h3>
+                <p>Mentor–mentorált párosítások, jegyzetek és mentorálási határidők kezelése.</p>
+                <button class="btn-primary" onclick="openSection('mentor')">MENTOR MEGNYITÁSA</button>
             </div>
         </div>
     </div>
@@ -2264,6 +2270,31 @@ h1.logo-graffiti[style*="font-size:100px"] {
     </div>
 
     
+
+    <div id="mentor" class="tab-content">
+        <div class="section-head">
+            <h2>Mentor</h2>
+        </div>
+        <div class="mentor-grid">
+            <div class="dashboard-card">
+                <h3 id="mentorFormTitle">Mentorálás rögzítése</h3>
+                <label>Mentorált</label>
+                <select id="mentorMentee"></select>
+                <label>Mentor</label>
+                <select id="mentorMentor"></select>
+                <label>Mentorálás vége</label>
+                <input id="mentorExpiresAt" type="date">
+                <label>Jegyzet a mentoráltról</label>
+                <textarea id="mentorNote" rows="7" placeholder="Fejlődés, tapasztalatok, feladatok, észrevételek..."></textarea>
+                <button class="btn-primary" style="width:100%" onclick="saveMentorship()">MENTÉS</button>
+                <button id="mentorCancelEdit" class="hidden" style="width:100%; margin-top:8px;" onclick="cancelMentorshipEdit()">MÉGSE</button>
+            </div>
+            <div>
+                <input id="mentorSearch" type="text" placeholder="Keresés mentoráltra, mentorra vagy jegyzetre..." oninput="renderMentor()">
+                <div id="mentorList" class="mentor-list"></div>
+            </div>
+        </div>
+    </div>
 
     <div id="admin-panel" class="tab-content">
         <div class="section-head">
@@ -2551,7 +2582,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
     const LEADERSHIP_MENU = ["dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "leltár", "fekete-lista", "admin-panel"];
     const CONTROL_MENU = ["iranyito-maffia", "iranyito-terulet", "iranyito-felszereles"];
-    const MENU = ["főoldal", ...LEADERSHIP_MENU, ...CONTROL_MENU];
+    const MENTOR_MENU = ["mentor"];
+    const MENU = ["főoldal", ...LEADERSHIP_MENU, ...CONTROL_MENU, ...MENTOR_MENU];
 
     const RANK_ORDER = [
         "Prodigy",
@@ -2598,6 +2630,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
     let currentNavSection = "home";
     let pendingTerritoryPoint = null;
     let editingEquipmentIndex = -1;
+    let editingMentorshipId = null;
     let saveQueue = Promise.resolve();
     let localRevision = 0;
     let lastRemoteRevision = 0;
@@ -2635,6 +2668,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
             },
             hiddenTabs: [],
             leaderChat: [],
+            mentorships: [],
             controller: {
                 mafias: [],
                 territories: [],
@@ -2644,11 +2678,11 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function getFullAdminRoles() {
-        return ["Prodigy", "Organizer", "Operator", "Specialist"];
+        return ["Prodigy", "Organizer", "Operator"];
     }
     
     function getAccountingRoles() {
-        return ["Prodigy", "Organizer", "Operator", "Specialist"];
+        return ["Prodigy", "Organizer", "Operator"];
     }
     
     function getRoleByEmail(email) {
@@ -2682,29 +2716,27 @@ h1.logo-graffiti[style*="font-size:100px"] {
     
     function canSeeTab(tabId) {
         const hiddenTabs = Array.isArray(db.hiddenTabs) ? db.hiddenTabs : [];
-    
-        if (hiddenTabs.includes(tabId) && !isFullAdmin()) return false;
-    
-        if (tabId === "admin-panel") return isFullAdmin();
-    
+        const fullAccessRoles = ["Prodigy", "Organizer", "Operator"];
+        const specialistAccess = currentUserRole === "Specialist";
+
+        // A kézzel elrejtett menüpontokat csak a teljes hozzáférésű rangok írhatják felül.
+        if (hiddenTabs.includes(tabId) && !fullAccessRoles.includes(currentUserRole)) return false;
+
+        // A főoldal minden belépett tagnak elérhető.
         if (tabId === "főoldal") return true;
-        if (tabId === "dashboard") return true;
-        if (tabId === "taglista") return true;
-    
-        if (tabId === "könyvelés") return canUseAccounting();
-        if (tabId === "fizetés") return canUseAccounting();
-    
-        if (tabId === "üzletek") return true;
-        if (tabId === "árak") return true;
-        if (tabId === "pénzmozgás") return true;
-        if (tabId === "telefonkönyv") return true;
-        if (tabId === "leltár") return true;
-        if (tabId === "fekete-lista") return true;
-        if (CONTROL_MENU.includes(tabId)) return true;
-    
-        return true;
+
+        // Prodigy / Organizer / Operator: minden menüpont.
+        if (fullAccessRoles.includes(currentUserRole)) return true;
+
+        // Specialist: csak Irányító + Mentor.
+        if (specialistAccess) {
+            return CONTROL_MENU.includes(tabId) || MENTOR_MENU.includes(tabId);
+        }
+
+        // Enforcer és az alatta lévő rangok: csak Mentor.
+        return MENTOR_MENU.includes(tabId);
     }
-    
+
     function requireFullAdmin() {
         if (!isFullAdmin()) {
             customAlert("Ehhez nincs jogosultságod.");
@@ -2904,6 +2936,15 @@ h1.logo-graffiti[style*="font-size:100px"] {
             cash: Array.isArray(merged.logs?.cash) ? merged.logs.cash : [],
             acc: Array.isArray(merged.logs?.acc) ? merged.logs.acc : []
         };
+        // A Taglista a db.members adatforrást használja. Ezt külön is normalizáljuk,
+        // hogy a Mentor rész ugyanazokat a tagokat kapja Firestore betöltés után is.
+        if (Array.isArray(merged.members)) {
+            merged.members = merged.members.filter(m => m && typeof m === 'object');
+        } else if (merged.members && typeof merged.members === 'object') {
+            merged.members = Object.values(merged.members).filter(m => m && typeof m === 'object');
+        } else {
+            merged.members = [];
+        }
         merged.prices = Array.isArray(merged.prices) ? merged.prices : [];
         merged.inventory = Array.isArray(merged.inventory) ? merged.inventory : [];
         merged.inventoryLog = Array.isArray(merged.inventoryLog) ? merged.inventoryLog : [];
@@ -2911,6 +2952,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         merged.contacts = Array.isArray(merged.contacts) ? merged.contacts : [];
         merged.blacklist = Array.isArray(merged.blacklist) ? merged.blacklist : [];
         merged.leaderChat = Array.isArray(merged.leaderChat) ? merged.leaderChat : [];
+        merged.mentorships = Array.isArray(merged.mentorships) ? merged.mentorships : [];
         merged.permissions = { users: Array.isArray(merged.permissions?.users) ? merged.permissions.users : [] };
         merged.hiddenTabs = Array.isArray(merged.hiddenTabs) ? merged.hiddenTabs : [];
         merged.controller = {
@@ -3168,6 +3210,29 @@ h1.logo-graffiti[style*="font-size:100px"] {
         }
     }
 
+    function getActiveTabId() {
+        const active = document.querySelector('.tab-content.active');
+        return active ? active.id : '';
+    }
+
+    function renderActiveView(forceFull = false) {
+        const id = getActiveTabId();
+        try {
+            // A teljes render csak akkor fusson, amikor tényleg szükséges.
+            if (forceFull) { render(); return; }
+            if (!id) return;
+            if (!['mentor','leltar','iranyito-maffia','iranyito-terulet','iranyito-felszereles'].includes(id)) {
+                render();
+                return;
+            }
+            if (id === 'mentor') return renderMentor();
+            if (id === 'leltar') return renderInventory();
+            if (['iranyito-maffia','iranyito-terulet','iranyito-felszereles'].includes(id)) return renderController();
+        } catch (err) {
+            console.error('Aktív nézet renderelési hiba:', id, err);
+        }
+    }
+
     function save() {
         db = sanitizeDbForSave(db);
         const localSnapshot = sanitizeDbForSave(db);
@@ -3176,15 +3241,15 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
         // Ha valójában semmi nem változott, ne írjuk újra az egész dokumentumot.
         if (changedKeys.length === 0) {
-            render();
+            renderActiveView();
             return Promise.resolve(true);
         }
 
         changedKeys.forEach(key => pendingTopLevelChanges.set(key, cloneValue(localSnapshot[key])));
         writeLocalRecoveryCopy(localSnapshot);
 
-        // Azonnali UI-frissítés, hálózati késleltetés nélkül.
-        render();
+        // Azonnali UI-frissítés, de csak az aktív nézeten.
+        renderActiveView();
 
         if (!isSyncReady) {
             console.warn("A módosítás helyben és a mentési várólistán maradt, amíg vissza nem tér a kapcsolat.");
@@ -3206,7 +3271,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
         keys.forEach(key => pendingTopLevelChanges.set(key, cloneValue(db[key])));
         writeLocalRecoveryCopy(db);
-        render();
+        renderActiveView();
 
         if (!isSyncReady) {
             console.warn("A célzott mentés várólistára került:", keys);
@@ -3218,13 +3283,61 @@ h1.logo-graffiti[style*="font-size:100px"] {
     }
 
     function closeModal() {
-        document.getElementById('modalOverlay').style.display = 'none';
+        const overlay = document.getElementById('modalOverlay');
+        const body = document.getElementById('modalBody');
+        if (!overlay) return;
+        overlay.style.setProperty('display', 'none', 'important');
+        overlay.style.pointerEvents = 'none';
+        overlay.hidden = true;
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+        if (body) body.innerHTML = '';
+        document.body.classList.remove('modal-open');
     }
 
     function showModal(html) {
-        document.getElementById('modalBody').innerHTML = html;
-        document.getElementById('modalOverlay').style.display = 'flex';
+        const overlay = document.getElementById('modalOverlay');
+        const body = document.getElementById('modalBody');
+        if (!overlay || !body) return;
+        body.innerHTML = html;
+        overlay.hidden = false;
+        overlay.style.removeProperty('display');
+        overlay.style.display = 'flex';
+        overlay.style.pointerEvents = 'auto';
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('modal-open');
     }
+
+    // Egységes modal-kezelés: háttérre kattintva és ESC-re is biztosan bezár.
+    document.addEventListener('click', (event) => {
+        const overlay = document.getElementById('modalOverlay');
+        if (overlay && event.target === overlay && overlay.style.display !== 'none') closeModal();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') {
+            const overlay = document.getElementById('modalOverlay');
+            if (overlay && overlay.style.display !== 'none') closeModal();
+        }
+    });
+
+
+    // Minden UI-gomb legyen valódi kezelőgomb, ne tudjon véletlenül form submitot indítani.
+    function normalizeButtons(root = document) {
+        root.querySelectorAll?.('button:not([type])').forEach(btn => btn.type = 'button');
+    }
+    normalizeButtons();
+    const buttonObserver = new MutationObserver(mutations => {
+        for (const mutation of mutations) {
+            mutation.addedNodes.forEach(node => {
+                if (node.nodeType === 1) {
+                    if (node.matches?.('button:not([type])')) node.type = 'button';
+                    normalizeButtons(node);
+                }
+            });
+        }
+    });
+    buttonObserver.observe(document.body, { childList: true, subtree: true });
 
     function customAlert(msg) {
         showModal(`
@@ -3245,8 +3358,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
         `);
 
         document.getElementById('confirmYes').onclick = () => {
-            onConfirm();
             closeModal();
+            requestAnimationFrame(() => onConfirm());
         };
     }
 
@@ -3312,6 +3425,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         else db.members.push(data);
 
         closeModal();
+        populateMentorSelects();
         save();
     }
 
@@ -3320,6 +3434,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         if (!db.members[idx]) return;
         customConfirm(`Biztosan törlöd: ${escapeHtml(db.members[idx].ic)}?`, () => {
             db.members.splice(idx, 1);
+            populateMentorSelects();
             save();
         });
     }
@@ -3660,6 +3775,18 @@ function flashBalanceDirection(isUp) {
     }
     
     
+    function setHtml(el, html) {
+        if (!el) return false;
+        el.innerHTML = html;
+        return true;
+    }
+
+    function setText(el, text) {
+        if (!el) return false;
+        el.innerText = text;
+        return true;
+    }
+
     function render() {
         console.log("RENDER DB =", JSON.parse(JSON.stringify(db)));
         const currentBalance = Number(db.balance || 0);
@@ -3692,7 +3819,7 @@ function flashBalanceDirection(isUp) {
     
         lastRenderedBalance = currentBalance;
         
-        document.getElementById('statMembers').innerText = (db.members || []).length;
+        setText(document.getElementById('statMembers'), (db.members || []).length);
         document.querySelectorAll('.danger-zone').forEach(el => {
             el.style.display = isFullAdmin() ? '' : 'none';
         });
@@ -3712,23 +3839,23 @@ function flashBalanceDirection(isUp) {
             statMonthlyProfitEl.style.color = monthly < 0 ? 'var(--neon-red)' : 'var(--neon-green)';
         }
 
-        document.querySelector('#tabTrade tbody').innerHTML = (db.config.tradeItems || []).map((v, i) =>
+        setHtml(document.querySelector('#tabTrade tbody'), (db.config.tradeItems || []).map((v, i) =>
             `<tr><td>${escapeHtml(v)}</td><td><button onclick="removeTradeItem(${i})">Törlés</button></td></tr>`
-        ).join('');
+        ).join(''));
 
-        document.querySelector('#tabFrac tbody').innerHTML = (db.config.fractions || []).map((v, i) =>
+        setHtml(document.querySelector('#tabFrac tbody'), (db.config.fractions || []).map((v, i) =>
             `<tr><td>${escapeHtml(v)}</td><td><button onclick="removeFraction(${i})">Törlés</button></td></tr>`
-        ).join('');
+        ).join(''));
 
-        document.querySelector('#tabAccType tbody').innerHTML = (db.config.accTypes || []).map((v, i) =>
+        setHtml(document.querySelector('#tabAccType tbody'), (db.config.accTypes || []).map((v, i) =>
             `<tr><td>${escapeHtml(v.name)}</td><td>${Number(v.price || 0).toLocaleString()} Cs</td><td><button onclick="removeAccType(${i})">Törlés</button></td></tr>`
-        ).join('');
+        ).join(''));
 
         const sortedMembers = (db.members || [])
             .map((m, i) => ({ ...m, _originalIndex: i }))
             .sort((a, b) => getRankIndex(a.rank) - getRankIndex(b.rank));
         
-        document.querySelector('#tabMembers tbody').innerHTML = sortedMembers.map((m) =>
+        setHtml(document.querySelector('#tabMembers tbody'), sortedMembers.map((m) =>
             `<tr>
                 <td>${escapeHtml(m.nick || '-')}</td>
                 <td>${escapeHtml(m.ic || '')}</td>
@@ -3740,13 +3867,13 @@ function flashBalanceDirection(isUp) {
                     <button class="btn-danger" onclick="deleteMember(${m._originalIndex})">Törlés</button>
                 </td>
             </tr>`
-        ).join('');
+        ).join(''));
 
-        document.getElementById('accMemberGrid').innerHTML = (db.members || []).map((m, i) =>
+        setHtml(document.getElementById('accMemberGrid'), (db.members || []).map((m, i) =>
             `<div class="member-card ${selectedAccMembers.has(i) ? 'selected' : ''}" onclick="toggleAccMember(${i})">
                 ${escapeHtml(m.nick || '')}
             </div>`
-        ).join('');
+        ).join(''));
 
         const fill = (id, list, v, t) => {
             const el = document.getElementById(id);
@@ -3763,7 +3890,7 @@ function flashBalanceDirection(isUp) {
         fill('selAccType', db.config.accTypes, 'price', 'name');
         fill('priceFaction', db.config.fractions);
 
-        document.querySelector('#tabAccLog tbody').innerHTML = (db.logs.acc || []).slice(-10).reverse().map(l =>
+        setHtml(document.querySelector('#tabAccLog tbody'), (db.logs.acc || []).slice(-10).reverse().map(l =>
             `<tr>
                 <td>${escapeHtml(l.time || '')}</td>
                 <td>${escapeHtml(l.type || '')}</td>
@@ -3771,9 +3898,9 @@ function flashBalanceDirection(isUp) {
                 <td>${escapeHtml(l.peps || '')}</td>
                 <td>${Number(l.share || 0).toLocaleString()} Cs</td>
             </tr>`
-        ).join('');
+        ).join(''));
 
-        document.querySelector('#tabTradeLog tbody').innerHTML = (db.logs.trade || []).slice(-10).reverse().map(l =>
+        setHtml(document.querySelector('#tabTradeLog tbody'), (db.logs.trade || []).slice(-10).reverse().map(l =>
             `<tr>
                 <td>${escapeHtml(l.time || '')}</td>
                 <td>${escapeHtml(l.p || '')}</td>
@@ -3781,9 +3908,9 @@ function flashBalanceDirection(isUp) {
                 <td>${escapeHtml(l.itm || '')}</td>
                 <td>${Number(l.a || 0).toLocaleString()} Cs</td>
             </tr>`
-        ).join('');
+        ).join(''));
 
-        document.querySelector('#tabCashLog tbody').innerHTML = (db.logs.cash || []).slice(-15).reverse().map(l =>
+        setHtml(document.querySelector('#tabCashLog tbody'), (db.logs.cash || []).slice(-15).reverse().map(l =>
             `<tr>
                 <td>${escapeHtml(l.time || '')}</td>
                 <td style="font-weight:bold;">${escapeHtml(l.event || '')}</td>
@@ -3793,9 +3920,9 @@ function flashBalanceDirection(isUp) {
                 </td>
                 <td>${Number(l.bal || 0).toLocaleString()} Cs</td>
             </tr>`
-        ).join('');
+        ).join(''));
 
-        document.querySelector('#tabPay tbody').innerHTML = (db.members || []).map((m, idx) => {
+        setHtml(document.querySelector('#tabPay tbody'), (db.members || []).map((m, idx) => {
             if (!m.pay || m.pay <= 0) return '';
 
             const twoWeeks = 14 * 24 * 60 * 60 * 1000;
@@ -3827,7 +3954,7 @@ function flashBalanceDirection(isUp) {
                     </td>
                 </tr>
             `;
-        }).join('');
+        }).join(''));
 
         let phHtml = "";
         (db.config.fractions || []).forEach(f => {
@@ -3937,21 +4064,22 @@ function flashBalanceDirection(isUp) {
                 priceGroupsEl.innerHTML = priceHtml || `<p class="muted">Nincs találat a keresésre.</p>`;
             }
         
-        document.getElementById('phGroups').innerHTML = phHtml || `<p class="muted">Nincs elmentett kontakt.</p>`;
+        setHtml(document.getElementById('phGroups'), phHtml || `<p class="muted">Nincs elmentett kontakt.</p>`);
 
-        document.querySelector('#tabBL tbody').innerHTML = (db.blacklist || []).map((b, i) =>
+        setHtml(document.querySelector('#tabBL tbody'), (db.blacklist || []).map((b, i) =>
             `<tr>
                 <td>${escapeHtml(b.n || '')}</td>
                 <td>${escapeHtml(b.i || '')}</td>
                 <td><button class="btn-danger" onclick="deleteBL(${i})">Törlés</button></td>
             </tr>`
-        ).join('');
+        ).join(''));
             
             renderAdminPanel();
             renderInventory();
             renderController();
             renderCart();
             renderLeaderChat();
+            renderMentor();
         }
 
     function showTab(id) {
@@ -3971,6 +4099,21 @@ function flashBalanceDirection(isUp) {
             currentNavSection = 'home';
             buildMenu();
         }
+
+        // A nézet megnyitásakor azonnal rajzoljuk ki az aktuális adatokat.
+        // Így nem kell a keresőbe egy karaktert beírni ahhoz, hogy megjelenjen a lista.
+        // A DOM már aktív, ezért az adott nézetet közvetlenül rajzoljuk ki.
+        // Nem futtatjuk egymás után a teljes és a rész-renderelőt, mert azok felülírhatják egymást.
+        requestAnimationFrame(() => {
+            try {
+                if (id === 'mentor') renderMentor();
+                else if (id === 'leltar') renderInventory();
+                else if (['iranyito-maffia','iranyito-terulet','iranyito-felszereles'].includes(id)) renderController();
+                else render();
+            } catch (err) {
+                console.error('Tab render hiba:', id, err);
+            }
+        });
     }
 
     function openSection(section) {
@@ -3986,6 +4129,14 @@ function flashBalanceDirection(isUp) {
         if (section === 'iranyito') {
             const first = CONTROL_MENU.find(tab => canSeeTab(tab));
             if (first) showTab(first);
+            return;
+        }
+
+        if (section === 'mentor') {
+            const first = MENTOR_MENU.find(tab => canSeeTab(tab));
+            if (first) showTab(first);
+            // Mindig friss Taglista-adatokkal nyissuk meg a Mentor részt.
+            renderMentor();
             return;
         }
 
@@ -4119,17 +4270,9 @@ function flashBalanceDirection(isUp) {
     };
 
     function buildMenu() {
-        let sectionMenu;
-
-        if (currentNavSection === 'vezetoseg') {
-            sectionMenu = ['főoldal', ...LEADERSHIP_MENU];
-        } else if (currentNavSection === 'iranyito') {
-            sectionMenu = ['főoldal', ...CONTROL_MENU];
-        } else {
-            sectionMenu = ['főoldal'];
-        }
-
-        const visibleMenu = sectionMenu.filter(tab => canSeeTab(tab));
+        // Nincs több köztes főoldali menü-kattintgatás: a fejlécben azonnal
+        // minden olyan menüpont megjelenik, amelyhez az aktuális rangnak joga van.
+        const visibleMenu = MENU.filter(tab => canSeeTab(tab));
         const nav = document.getElementById('mainNav');
         if (!nav) return;
 
@@ -4269,8 +4412,6 @@ function flashBalanceDirection(isUp) {
     }
     window.onload = () => {
         buildMenu();
-        initMusicPlayer();
-    
         auth.onAuthStateChanged((user) => {
             if (user) {
                 closeModal();
@@ -4283,6 +4424,24 @@ function flashBalanceDirection(isUp) {
             }
         });
     };
+
+    // Keresők/listák első megjelenítésének biztosítása mobilon és desktopon is.
+    document.addEventListener('DOMContentLoaded', () => {
+        ['priceSearch','mentorSearch','inventorySearch','mafiaSearch','territorySearch','equipmentSearch'].forEach(id => {
+            const el = document.getElementById(id);
+            if (!el || el.dataset.renderFixBound) return;
+            el.dataset.renderFixBound = '1';
+            const refresh = () => {
+                if (id === 'mentorSearch') renderMentor();
+                else if (id === 'inventorySearch') renderInventory();
+                else if (['mafiaSearch','territorySearch','equipmentSearch'].includes(id)) renderController();
+                else render();
+            };
+            el.addEventListener('search', refresh);
+            el.addEventListener('change', refresh);
+        });
+        requestAnimationFrame(() => { try { render(); } catch (_) {} });
+    });
 
     function addPriceItem() {
         if (!requireFullAdmin()) return;
@@ -5093,6 +5252,171 @@ function flashBalanceDirection(isUp) {
 
         renderTerritoryPins();
         updateTerritoryPointText();
+    }
+
+    function getMentorMembers() {
+        // Pontosan ugyanaz az adatforrás, mint amit a Taglista használ.
+        // Régebbi Firestore mentéseknél a members néha objektumként kerülhetett vissza,
+        // ezért azt is tömbbé alakítjuk.
+        if (Array.isArray(db.members)) return db.members.filter(m => m && typeof m === 'object');
+        if (db.members && typeof db.members === 'object') return Object.values(db.members).filter(m => m && typeof m === 'object');
+        return [];
+    }
+
+    function getMemberDisplayName(member) {
+        const value = member?.nick || member?.ic || member?.name || 'Névtelen tag';
+        return String(value).trim();
+    }
+
+    function getMentorMemberKey(member, index) {
+        // Stabil kulcs, de az indexet is hozzáadjuk, így azonos Discord/IC név sem tüntet el tagot.
+        const base = member?.id || member?.dc || member?.ic || member?.nick || 'member';
+        return `${String(base)}__${index}`;
+    }
+
+    function populateMentorSelects() {
+        const mentee = document.getElementById('mentorMentee');
+        const mentor = document.getElementById('mentorMentor');
+        if (!mentee || !mentor) return;
+
+        const members = getMentorMembers();
+        const oldMentee = mentee.value;
+        const oldMentor = mentor.value;
+
+        const options = members.map((m, i) => {
+            const key = getMentorMemberKey(m, i);
+            const label = getMemberDisplayName(m);
+            const ic = String(m?.ic || '').trim();
+            const rank = String(m?.rank || '').trim();
+            const details = [ic && ic !== label ? ic : '', rank].filter(Boolean).join(' • ');
+            return `<option value="${escapeAttr(key)}">${escapeHtml(label + (details ? ` – ${details}` : ''))}</option>`;
+        }).join('');
+
+        const emptyText = members.length ? 'Válassz mentoráltat...' : 'Nincs tag a Taglistában';
+        const emptyMentorText = members.length ? 'Válassz mentort...' : 'Nincs tag a Taglistában';
+        mentee.innerHTML = `<option value="">${emptyText}</option>${options}`;
+        mentor.innerHTML = `<option value="">${emptyMentorText}</option>${options}`;
+
+        if ([...mentee.options].some(o => o.value === oldMentee)) mentee.value = oldMentee;
+        if ([...mentor.options].some(o => o.value === oldMentor)) mentor.value = oldMentor;
+    }
+
+    function findMemberForMentorKey(key) {
+        const members = getMentorMembers();
+        const index = members.findIndex((m, i) => getMentorMemberKey(m, i) === String(key));
+        return index >= 0 ? members[index] : null;
+    }
+
+    function mentorStatus(expiresAt) {
+        if (!expiresAt) return { text: 'Nincs lejárat', cls: '' };
+        const end = new Date(expiresAt + 'T23:59:59');
+        if (Number.isNaN(end.getTime())) return { text: 'Nincs lejárat', cls: '' };
+        const diff = end.getTime() - Date.now();
+        if (diff < 0) return { text: 'Lejárt', cls: 'expired' };
+        const days = Math.ceil(diff / 86400000);
+        if (days <= 7) return { text: `${days} nap van hátra`, cls: 'soon' };
+        return { text: `${days} nap van hátra`, cls: '' };
+    }
+
+    function saveMentorship() {
+        const menteeKey = document.getElementById('mentorMentee')?.value || '';
+        const mentorKey = document.getElementById('mentorMentor')?.value || '';
+        const expiresAt = document.getElementById('mentorExpiresAt')?.value || '';
+        const note = document.getElementById('mentorNote')?.value.trim() || '';
+        if (!menteeKey || !mentorKey) return customAlert('Válaszd ki a mentoráltat és a mentort.');
+        if (menteeKey === mentorKey) return customAlert('A mentor és a mentorált nem lehet ugyanaz a személy.');
+
+        if (!Array.isArray(db.mentorships)) db.mentorships = [];
+        const mentee = findMemberForMentorKey(menteeKey);
+        const mentor = findMemberForMentorKey(mentorKey);
+        const existingIndex = editingMentorshipId
+            ? db.mentorships.findIndex(x => String(x.id) === String(editingMentorshipId))
+            : db.mentorships.findIndex(x => String(x.menteeKey) === String(menteeKey));
+
+        const previous = existingIndex >= 0 ? db.mentorships[existingIndex] : null;
+        const entry = {
+            id: previous?.id || `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+            menteeKey,
+            menteeName: getMemberDisplayName(mentee),
+            mentorKey,
+            mentorName: getMemberDisplayName(mentor),
+            expiresAt,
+            note,
+            createdAt: previous?.createdAt || Date.now(),
+            updatedAt: Date.now(),
+            updatedBy: currentUserEmail || ''
+        };
+
+        if (existingIndex >= 0) db.mentorships[existingIndex] = entry;
+        else db.mentorships.push(entry);
+        cancelMentorshipEdit(false);
+        saveSections(['mentorships']);
+    }
+
+    function editMentorship(id) {
+        const item = (db.mentorships || []).find(x => String(x.id) === String(id));
+        if (!item) return;
+        editingMentorshipId = item.id;
+        populateMentorSelects();
+        document.getElementById('mentorMentee').value = item.menteeKey || '';
+        document.getElementById('mentorMentor').value = item.mentorKey || '';
+        document.getElementById('mentorExpiresAt').value = item.expiresAt || '';
+        document.getElementById('mentorNote').value = item.note || '';
+        document.getElementById('mentorFormTitle').innerText = 'Mentorálás szerkesztése';
+        document.getElementById('mentorCancelEdit').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function cancelMentorshipEdit(renderAfter = true) {
+        editingMentorshipId = null;
+        ['mentorMentee','mentorMentor','mentorExpiresAt','mentorNote'].forEach(id => {
+            const el = document.getElementById(id); if (el) el.value = '';
+        });
+        const title = document.getElementById('mentorFormTitle');
+        if (title) title.innerText = 'Mentorálás rögzítése';
+        document.getElementById('mentorCancelEdit')?.classList.add('hidden');
+        if (renderAfter) renderMentor();
+    }
+
+    function deleteMentorship(id) {
+        const item = (db.mentorships || []).find(x => String(x.id) === String(id));
+        if (!item) return;
+        customConfirm(`Biztosan törlöd ${escapeHtml(item.menteeName || 'a mentorált')} mentorálását?`, () => {
+            db.mentorships = (db.mentorships || []).filter(x => String(x.id) !== String(id));
+            if (String(editingMentorshipId) === String(id)) cancelMentorshipEdit(false);
+            saveSections(['mentorships']);
+        });
+    }
+
+    function renderMentor() {
+        populateMentorSelects();
+        const list = document.getElementById('mentorList');
+        if (!list) return;
+        const q = (document.getElementById('mentorSearch')?.value || '').toLowerCase().trim();
+        const items = (Array.isArray(db.mentorships) ? db.mentorships : [])
+            .filter(x => !q || `${x.menteeName || ''} ${x.mentorName || ''} ${x.note || ''} ${x.expiresAt || ''}`.toLowerCase().includes(q))
+            .slice()
+            .sort((a,b) => String(a.expiresAt || '9999').localeCompare(String(b.expiresAt || '9999')));
+
+        list.innerHTML = items.map(item => {
+            const status = mentorStatus(item.expiresAt);
+            const updated = item.updatedAt ? new Date(item.updatedAt).toLocaleString('hu-HU') : '-';
+            return `<div class="mentor-card ${status.cls}">
+                <div class="mentor-card-head">
+                    <div>
+                        <div class="mentor-card-title">${escapeHtml(item.menteeName || 'Ismeretlen mentorált')}</div>
+                        <div class="muted">Mentor: <strong>${escapeHtml(item.mentorName || 'Ismeretlen')}</strong></div>
+                        <span class="mentor-badge">${item.expiresAt ? escapeHtml(item.expiresAt) + ' • ' : ''}${escapeHtml(status.text)}</span>
+                    </div>
+                    <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                        <button onclick="editMentorship('${escapeAttr(item.id)}')">Szerk.</button>
+                        <button class="btn-danger" onclick="deleteMentorship('${escapeAttr(item.id)}')">Törlés</button>
+                    </div>
+                </div>
+                <div class="mentor-note">${item.note ? escapeHtml(item.note) : '<span class="muted">Nincs jegyzet.</span>'}</div>
+                <small class="muted">Utolsó módosítás: ${escapeHtml(updated)}${item.updatedBy ? ' • ' + escapeHtml(item.updatedBy) : ''}</small>
+            </div>`;
+        }).join('') || `<p class="muted">Még nincs rögzített mentorálás.</p>`;
     }
 
     function sendLeaderMessage() {
