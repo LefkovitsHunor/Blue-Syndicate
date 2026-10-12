@@ -2030,6 +2030,35 @@ h1.logo-graffiti[style*="font-size:100px"] {
         .vault-lock, .vault-lock::before, .vault-lock::after, .heist-title { animation: none !important; }
         .heist-progress span { animation-duration: 1.8s; }
     }
+    /* Mentor legördülő listák: sötét háttér és olvasható szöveg. */
+    #mentorMentee, #mentorMentor,
+    #mentorMentee option, #mentorMentor option {
+        background-color: #101010 !important;
+        color: #ffffff !important;
+        color-scheme: dark;
+    }
+    #mentorMentee option:checked, #mentorMentor option:checked {
+        background-color: #205fc9 !important;
+        color: #ffffff !important;
+    }
+
+/* Blue Syndicate – egységes, egyedi legördülő menük */
+.bs-select-wrap { position:relative; width:100%; margin-bottom:10px; }
+.bs-select-wrap > select { position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; opacity:0 !important; pointer-events:none !important; margin:0 !important; }
+.bs-select-trigger { width:100%; min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:12px; text-align:left; padding:11px 13px; background:#101010; border:1px solid #383838; border-radius:8px; color:#f5f5f5; font:inherit; letter-spacing:normal; text-transform:none; box-shadow:none; cursor:pointer; transition:border-color .15s,background .15s; }
+.bs-select-trigger:hover, .bs-select-trigger:focus-visible, .bs-select-trigger[aria-expanded="true"] { background:#171717; border-color:var(--season-accent, #3795ff); box-shadow:0 0 0 2px rgba(var(--season-accent-rgb,55,149,255),.12); transform:none; outline:none; }
+.bs-select-trigger:disabled { opacity:.45; cursor:not-allowed; }
+.bs-select-value { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.bs-select-arrow { flex:none; width:9px; height:9px; border-right:2px solid var(--season-accent,#3795ff); border-bottom:2px solid var(--season-accent,#3795ff); transform:rotate(45deg) translateY(-2px); }
+.bs-select-popup { position:fixed; z-index:2147483000; background:#101010; border:1px solid var(--season-accent,#3795ff); border-radius:10px; padding:6px; box-shadow:0 14px 35px rgba(0,0,0,.85); display:flex; flex-direction:column; gap:5px; overflow:hidden; }
+.bs-select-search { width:100% !important; flex:none; margin:0 !important; min-height:38px; background:#1b1b1b !important; border:1px solid #393939 !important; color:#fff !important; border-radius:7px; padding:8px 10px !important; font:inherit; }
+.bs-select-options { overflow-y:auto; overscroll-behavior:contain; max-height:260px; scrollbar-color:#555 #151515; }
+.bs-select-item { display:block; width:100%; text-align:left; border:0; border-radius:6px; background:transparent; color:#ededed; padding:10px 11px; min-height:38px; font:inherit; font-size:14px; letter-spacing:normal; text-transform:none; white-space:normal; overflow-wrap:anywhere; box-shadow:none; cursor:pointer; }
+.bs-select-item:hover, .bs-select-item:focus-visible, .bs-select-item.bs-highlight { background:rgba(var(--season-accent-rgb,55,149,255),.16); color:#fff; transform:none; box-shadow:none; outline:none; }
+.bs-select-item[aria-selected="true"] { background:rgba(var(--season-accent-rgb,55,149,255),.25); color:#fff; }
+.bs-select-item:disabled { opacity:.4; cursor:not-allowed; }
+.bs-select-empty { padding:12px; color:#aaa; font-size:13px; }
+
 </style>
 </head>
 <body>
@@ -5641,5 +5670,171 @@ function flashBalanceDirection(isUp) {
     }
 
 </script>
+
+<script>
+/* Kizárólag a natív SELECT mezők megjelenítését cseréli le.
+   Az eredeti select, value, onchange és change esemény megmarad. */
+(function () {
+    'use strict';
+    const registry = new WeakMap();
+    let active = null;
+    function closeMenu() {
+        if (!active) return;
+        active.trigger.setAttribute('aria-expanded','false');
+        active.popup.remove();
+        active = null;
+    }
+    function refresh(entry) {
+        const {select,trigger,label} = entry;
+        const option = select.options[select.selectedIndex];
+        label.textContent = option ? option.textContent : 'Válassz...';
+        trigger.disabled = select.disabled;
+        if (active === entry) renderOptions(entry, active.search ? active.search.value : '');
+    }
+    function renderOptions(entry, query) {
+        if (active !== entry) return;
+        const list = active.list;
+        list.replaceChildren();
+        const term = (query || '').toLocaleLowerCase('hu');
+        let count = 0;
+        Array.from(entry.select.options).forEach((option, index) => {
+            if (option.hidden || !option.textContent.toLocaleLowerCase('hu').includes(term)) return;
+            count++;
+            const item = document.createElement('button');
+            item.type = 'button';
+            item.className = 'bs-select-item';
+            item.setAttribute('role','option');
+            item.setAttribute('aria-selected', String(index === entry.select.selectedIndex));
+            item.textContent = option.textContent;
+            item.disabled = option.disabled || (option.parentElement && option.parentElement.disabled);
+            item.addEventListener('click', () => {
+                if (item.disabled) return;
+                entry.select.selectedIndex = index;
+                refresh(entry);
+                entry.select.dispatchEvent(new Event('input', {bubbles:true}));
+                entry.select.dispatchEvent(new Event('change', {bubbles:true}));
+                closeMenu();
+                entry.trigger.focus();
+            });
+            list.appendChild(item);
+        });
+        if (!count) {
+            const empty = document.createElement('div');
+            empty.className = 'bs-select-empty';
+            empty.textContent = 'Nincs találat';
+            list.appendChild(empty);
+        }
+    }
+    function placePopup() {
+        if (!active) return;
+        const rect = active.trigger.getBoundingClientRect();
+        const width = Math.min(rect.width, window.innerWidth - 16);
+        const below = window.innerHeight - rect.bottom;
+        const above = rect.top;
+        const upward = below < 240 && above > below;
+        const available = Math.max(100, (upward ? above : below) - 12);
+        active.popup.style.width = width + 'px';
+        active.popup.style.left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8)) + 'px';
+        active.popup.style.maxHeight = Math.min(330,available) + 'px';
+        active.popup.style.top = upward ? Math.max(8,rect.top - Math.min(active.popup.scrollHeight,available) - 5) + 'px' : (rect.bottom + 5) + 'px';
+    }
+    function openMenu(entry) {
+        if (active === entry) { closeMenu(); return; }
+        closeMenu();
+        if (entry.select.disabled) return;
+        refresh(entry);
+        const popup = document.createElement('div');
+        popup.className = 'bs-select-popup';
+        popup.setAttribute('role','listbox');
+        const list = document.createElement('div');
+        list.className = 'bs-select-options';
+        let search = null;
+        if (entry.select.options.length > 8) {
+            search = document.createElement('input');
+            search.type = 'search';
+            search.className = 'bs-select-search';
+            search.placeholder = 'Keresés a listában...';
+            search.setAttribute('aria-label','Keresés a listában');
+            search.addEventListener('input', () => renderOptions(entry, search.value));
+            popup.appendChild(search);
+        }
+        popup.appendChild(list);
+        document.body.appendChild(popup);
+        active = entry;
+        entry.popup = popup; entry.list = list; entry.search = search;
+        entry.trigger.setAttribute('aria-expanded','true');
+        renderOptions(entry, '');
+        placePopup();
+        const chosen = list.querySelector('[aria-selected="true"]');
+        if (chosen) chosen.scrollIntoView({block:'nearest'});
+        if (search) search.focus({preventScroll:true});
+    }
+    function enhance(select) {
+        if (registry.has(select) || select.multiple || select.size > 1 || select.closest('.bs-select-wrap')) return;
+        const wrap = document.createElement('div');
+        wrap.className = 'bs-select-wrap';
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'bs-select-trigger';
+        trigger.setAttribute('aria-haspopup','listbox');
+        trigger.setAttribute('aria-expanded','false');
+        const label = document.createElement('span');
+        label.className = 'bs-select-value';
+        const arrow = document.createElement('span');
+        arrow.className = 'bs-select-arrow';
+        arrow.setAttribute('aria-hidden','true');
+        trigger.append(label,arrow);
+        select.parentNode.insertBefore(wrap,select);
+        wrap.append(select,trigger);
+        const entry = {select,trigger,label};
+        registry.set(select,entry);
+        trigger.addEventListener('click', () => openMenu(entry));
+        trigger.addEventListener('keydown', e => {
+            if (['ArrowDown','ArrowUp','Enter',' '].includes(e.key)) {
+                e.preventDefault();
+                if (active !== entry) openMenu(entry);
+                else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    const items = Array.from(entry.list.querySelectorAll('.bs-select-item:not(:disabled)'));
+                    const current = items.findIndex(x => x.classList.contains('bs-highlight'));
+                    items.forEach(x => x.classList.remove('bs-highlight'));
+                    const next = items[(current + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length];
+                    if (next) { next.classList.add('bs-highlight'); next.scrollIntoView({block:'nearest'}); }
+                }
+            }
+        });
+        select.addEventListener('change', () => refresh(entry));
+        const observer = new MutationObserver(() => refresh(entry));
+        observer.observe(select,{childList:true,subtree:true,attributes:true,characterData:true});
+        refresh(entry);
+    }
+    function scan(root) {
+        if (root.nodeType !== 1 && root.nodeType !== 9) return;
+        if (root.matches && root.matches('select')) enhance(root);
+        if (root.querySelectorAll) root.querySelectorAll('select').forEach(enhance);
+    }
+    document.addEventListener('click', e => {
+        if (active && !active.popup.contains(e.target) && !active.trigger.contains(e.target)) closeMenu();
+    }, true);
+    document.addEventListener('keydown', e => {
+        if (!active) return;
+        if (e.key === 'Escape') { e.preventDefault(); const t=active.trigger; closeMenu(); t.focus(); }
+        else if (e.key === 'Enter' && active.search && document.activeElement === active.search) {
+            const first = active.list.querySelector('.bs-select-item:not(:disabled)');
+            if (first) { e.preventDefault(); first.click(); }
+        }
+    });
+    window.addEventListener('resize', placePopup);
+    window.addEventListener('scroll', placePopup, true);
+    const init = () => {
+        scan(document);
+        new MutationObserver(mutations => {
+            for (const mutation of mutations) for (const node of mutation.addedNodes) scan(node);
+        }).observe(document.body,{childList:true,subtree:true});
+    };
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded',init);
+    else init();
+})();
+</script>
+
 </body>
 </html>
