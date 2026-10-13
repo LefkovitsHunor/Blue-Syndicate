@@ -5430,6 +5430,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
     const pendingTopLevelChanges = new Map();
 
     let saveInProgress = false;
+    let missingRemoteDocument = false;
+    let lastLocalBackupSignature = "";
 
     let lastBackupAt = 0;
 
@@ -5713,7 +5715,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                 const snap = await transaction.get(DB_DOC);
 
-                const remote = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                if (!snap.exists) throw new Error("A központi adatdokumentum hiányzik; mentés letiltva.");
+                const remote = snap.data() || {};
 
                 const clean = sanitizeDbForSave(remote);
 
@@ -5827,7 +5830,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                 const snap = await transaction.get(DB_DOC);
 
-                const remote = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                if (!snap.exists) throw new Error("A központi adatdokumentum hiányzik; mentés letiltva.");
+                const remote = snap.data() || {};
 
                 const clean = sanitizeDbForSave(remote);
 
@@ -5877,7 +5881,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                 const snap = await transaction.get(DB_DOC);
 
-                const remote = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                if (!snap.exists) throw new Error("A központi adatdokumentum hiányzik; mentés letiltva.");
+                const remote = snap.data() || {};
 
                 const clean = sanitizeDbForSave(remote);
 
@@ -6249,7 +6254,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
         if (!requireFullAdmin()) return;
 
-        const ok = await createBackupSnapshot(db, "manual");
+        const remoteSnap = await DB_DOC.get().catch(err => { console.error(err); return null; });
+        const ok = remoteSnap?.exists ? await createBackupSnapshot(remoteSnap.data(), "manual") : false;
 
         if (ok) {
 
@@ -6317,8 +6323,9 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                 try {
 
-                    await createBackupSnapshot(db, "pre_restore");
+                    if (!await createBackupSnapshot(db, "pre_restore")) throw new Error("A visszaállítás előtti mentés sikertelen, a művelet leállt.");
 
+                    if (saveInProgress) throw new Error("Folyamatban lévő mentés mellett nem lehet visszaállítani.");
                     pendingTopLevelChanges.clear();
 
                     db = sanitizeDbForSave(backup.data);
@@ -6397,55 +6404,58 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
 
 
-    function writeLocalRecoveryCopy(source) {
-
-        try {
-
-            localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify({
-
-                version: 3,
-
-                savedAt: Date.now(),
-
-                data: sanitizeDbForSave(source)
-
-            }));
-
-            return true;
-
-        } catch (err) {
-
-            console.warn("Helyi biztonsági mentés hiba:", err);
-
-            return false;
-
-        }
-
+    function hasMeaningfulData(source) {
+        if (!source || typeof source !== 'object') return false;
+        const d = sanitizeDbForSave(source);
+        return (d.members?.length || 0) > 0 || (d.inventory?.length || 0) > 0 ||
+            (d.prices?.length || 0) > 0 || (d.logs?.cash?.length || 0) > 0 ||
+            (d.logs?.trade?.length || 0) > 0 || (d.logs?.acc?.length || 0) > 0 ||
+            (d.mentorships?.length || 0) > 0 || (d.controller?.mafias?.length || 0) > 0 ||
+            (d.controller?.territories?.length || 0) > 0 ||
+            (d.controller?.equipment?.length || 0) > 0 || Number(d.balance || 0) !== 0 ||
+            (d.permissions?.users?.length || 0) > 0;
     }
 
-
+    function writeLocalRecoveryCopy(source) {
+        try {
+            const clean = sanitizeDbForSave(source);
+            // Never replace the last useful recovery copy with an empty/default document.
+            if (!hasMeaningfulData(clean)) return false;
+            const encoded = JSON.stringify(clean);
+            if (encoded === lastLocalBackupSignature) return true;
+            const previous = localStorage.getItem(LOCAL_BACKUP_KEY);
+            if (previous) {
+                const parsed = JSON.parse(previous);
+                if (hasMeaningfulData(parsed?.data || parsed)) {
+                    const archiveKey = LOCAL_BACKUP_KEY + '_history';
+                    const history = JSON.parse(localStorage.getItem(archiveKey) || '[]');
+                    history.unshift(parsed);
+                    localStorage.setItem(archiveKey, JSON.stringify(history.slice(0, 10)));
+                }
+            }
+            localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify({ version: 4, savedAt: Date.now(), data: clean }));
+            lastLocalBackupSignature = encoded;
+            return true;
+        } catch (err) {
+            console.warn('Helyi biztonsági mentés hiba:', err);
+            return false;
+        }
+    }
 
     function readLocalRecoveryCopy() {
-
         try {
-
-            const parsed = JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY) || "null");
-
-            if (!parsed) return null;
-
-            return sanitizeDbForSave(parsed.data && typeof parsed.data === "object" ? parsed.data : parsed);
-
-        } catch (err) {
-
-            console.warn("A helyi biztonsági mentés nem olvasható:", err);
-
-            return null;
-
-        }
-
+            const candidates = [localStorage.getItem(LOCAL_BACKUP_KEY)];
+            const history = JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY + '_history') || '[]');
+            history.forEach(item => candidates.push(JSON.stringify(item)));
+            for (const raw of candidates) {
+                if (!raw) continue;
+                const parsed = JSON.parse(raw);
+                const data = sanitizeDbForSave(parsed?.data || parsed);
+                if (hasMeaningfulData(data)) return data;
+            }
+        } catch (err) { console.warn('Helyi mentés olvasási hiba:', err); }
+        return null;
     }
-
-
 
     function mergeRemoteWithPending(remoteSource) {
 
@@ -6485,7 +6495,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                     const snap = await transaction.get(DB_DOC);
 
-                    const remoteRaw = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                    if (!snap.exists) throw new Error("A shared/mainData dokumentum hiányzik. Az automatikus létrehozás letiltva az adatvesztés megelőzésére.");
+                    const remoteRaw = snap.data() || {};
 
                     const remote = sanitizeDbForSave(remoteRaw);
 
@@ -6547,7 +6558,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                     lastBackupAt = Date.now();
 
-                    createBackupSnapshot(result.remote, "auto").catch(() => {});
+                    createBackupSnapshot(result.remote, "auto").then(ok => { if (!ok) console.warn("Automatikus biztonsági mentés nem készült!"); });
 
                 }
 
@@ -6671,7 +6682,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
 
 
-        if (!isSyncReady) {
+        if (!isSyncReady || missingRemoteDocument) {
 
             console.warn("A módosítás helyben és a mentési várólistán maradt, amíg vissza nem tér a kapcsolat.");
 
@@ -6715,7 +6726,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
 
 
-        if (!isSyncReady) {
+        if (!isSyncReady || missingRemoteDocument) {
 
             console.warn("A célzott mentés várólistára került:", keys);
 
@@ -8493,8 +8504,9 @@ function flashBalanceDirection(isUp) {
 
         try {
 
-            await createBackupSnapshot(db, "pre_reset");
+            if (!await createBackupSnapshot(db, "pre_reset")) throw new Error("A törlés előtti mentés sikertelen, a törlés leállt.");
 
+            if (saveInProgress) throw new Error("Folyamatban lévő mentés mellett nem lehet törölni.");
             pendingTopLevelChanges.clear();
 
             db = getDefaultDb();
@@ -8580,6 +8592,7 @@ function flashBalanceDirection(isUp) {
 
 
             if (docSnap.exists) {
+                missingRemoteDocument = false;
 
                 const data = docSnap.data() || {};
 
@@ -8598,23 +8611,16 @@ function flashBalanceDirection(isUp) {
                 writeLocalRecoveryCopy(db);
 
             } else {
-
+                missingRemoteDocument = true;
+                isSyncReady = false;
                 const localBackup = readLocalRecoveryCopy();
-
                 db = localBackup || getDefaultDb();
-
-                lastSyncedDb = sanitizeDbForSave(db);
-
-                Object.keys(db).forEach(key => {
-
-                    if (!key.startsWith('_')) pendingTopLevelChanges.set(key, cloneValue(db[key]));
-
-                });
-
-                saveQueue = saveQueue.catch(() => false).then(() => flushPendingChanges());
-
+                // Do not initialize Firestore from empty defaults or local cache.
+                // An administrator must explicitly investigate and restore the missing document.
+                pendingTopLevelChanges.clear();
+                console.error('KRITIKUS: shared/mainData hiányzik. Automatikus felülírás letiltva.');
+                customAlert('FIGYELEM: A központi shared/mainData dokumentum hiányzik! A rendszer megállította a mentést az adatvesztés megelőzésére. Ellenőrizd a Firestore mentéseket.');
             }
-
 
 
             currentUserRole = getRoleByEmail(currentUserEmail);
