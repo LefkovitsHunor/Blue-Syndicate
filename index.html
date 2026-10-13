@@ -244,3 +244,1728 @@
             border-bottom: 1px solid #222;
             font-size: 14px;
         }
+
+        #totalBal {
+            font-size: 4em;
+            font-family: 'Permanent Marker', cursive;
+            color: var(--primary-blue);
+            text-align: center;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(55, 149, 255, 0.6);
+            animation: glowPulse 3s infinite ease-in-out;
+        }
+
+        .balance-up {
+            color: var(--neon-green) !important;
+            text-shadow: 0 0 25px rgba(57, 255, 20, 0.9) !important;
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+        }
+
+        .balance-down {
+            color: var(--neon-red) !important;
+            text-shadow: 0 0 25px rgba(255, 49, 49, 0.9) !important;
+            transition: color 0.2s ease, text-shadow 0.2s ease;
+        }
+
+        @keyframes glowPulse {
+            0%, 100% {
+                text-shadow: 0 0 15px rgba(55, 149, 255, 0.4);
+                transform: scale(1);
+            }
+            50% {
+                text-shadow: 0 0 35px rgba(55, 149, 255, 0.8);
+                transform: scale(1.03);
+            }
+        }
+
+        .member-card {
+            background: #111;
+            border: 1px solid #333;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 5px;
+            display: inline-block;
+            min-width: 130px;
+            text-align: center;
+        }
+
+        .member-card.selected {
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+            box-shadow: 0 0 10px rgba(57, 255, 20, 0.3);
+        }
+
+        .trade-toggle-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .trade-toggle-group button {
+            flex: 1;
+            padding: 15px;
+            opacity: 0.3;
+            border: 2px solid #333;
+        }
+
+        .trade-toggle-group button.active-elad {
+            opacity: 1;
+            border-color: var(--neon-green);
+            color: var(--neon-green);
+        }
+
+        .trade-toggle-group button.active-vetel {
+            opacity: 1;
+            border-color: var(--neon-red);
+            color: var(--neon-red);
+        }
+
+        nav button { position: relative; }
+
+        nav button::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            width: 0;
+            height: 2px;
+            background: var(--primary-blue);
+            transition: all 0.3s ease;
+            box-shadow: 0 0 8px var(--primary-blue);
+        }
+
+        nav button.active::after {
+            width: 80%;
+            left: 10%;
+        }
+
+        .stat-value { display: inline-block; }
+        .muted { color: #999; }
+        .danger-zone { border: 2px solid #ff3131; text-align: center; margin-top: 20px; }
+        .hidden { display: none !important; }
+
+        .main-title {
+            text-align: center;
+            font-size: clamp(38px, 10vw, 100px);
+            margin-top: clamp(30px, 8vw, 100px);
+        }
+
+        .section-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .price-card {
+            background: #101010;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .price-card:hover {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 12px rgba(55, 149, 255, 0.2);
+        }
+
+        .price-info { display: flex; flex-direction: column; }
+        .price-item { font-weight: bold; color: #fff; }
+        .price-value { color: var(--primary-blue); font-size: 14px; }
+        #priceSearch { max-width: 600px; margin-bottom: 20px; }
+
+        /* LELTÁR */
+        .inventory-toolbar {
+            display: grid;
+            grid-template-columns: minmax(220px, 1fr) 240px auto;
+            gap: 10px;
+            margin-bottom: 18px;
+            align-items: start;
+        }
+
+        .inventory-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .inventory-stat {
+            background: #0d0d0d;
+            border: 1px solid #292929;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .inventory-stat strong {
+            display: block;
+            color: var(--primary-blue);
+            font-size: 28px;
+            margin-top: 4px;
+        }
+
+        .inventory-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+        .inventory-actions button { padding: 8px 11px; min-width: 40px; }
+        .inventory-qty { font-size: 16px; font-weight: 700; color: #fff; }
+        .inventory-low { color: #ffd24d; text-shadow: 0 0 10px rgba(255,210,77,.18); }
+        .inventory-empty { color: var(--neon-red); text-shadow: 0 0 10px rgba(255,49,49,.18); }
+        .inventory-note { color: #aaa; max-width: 300px; white-space: normal !important; }
+        .inventory-log-change.plus { color: var(--neon-green); font-weight: bold; }
+        .inventory-log-change.minus { color: var(--neon-red); font-weight: bold; }
+
+        /* IRÁNYÍTÓ ÉS FŐOLDAL */
+        .home-hub {
+            max-width: 900px;
+            margin: 35px auto 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 18px;
+        }
+
+        .hub-card {
+            background: rgba(10,10,10,.96);
+            border: 1px solid #2a2a2a;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(0,0,0,.45);
+        }
+
+        .hub-card h3 {
+            margin-top: 0;
+            color: var(--primary-blue);
+            font-family: 'Rajdhani', sans-serif;
+            font-size: 24px;
+            letter-spacing: 1px;
+        }
+
+        .hub-card p { color: #aaa; min-height: 44px; }
+        .hub-card button { width: 100%; font-size: 16px; padding: 14px 18px; }
+
+        .controller-grid {
+            display: grid;
+            grid-template-columns: minmax(300px, 420px) minmax(0, 1fr);
+            gap: 20px;
+            align-items: start;
+        }
+
+        .controller-list { display: grid; gap: 12px; }
+
+        .controller-card {
+            background: #101010;
+            border: 1px solid #2a2a2a;
+            border-radius: 12px;
+            padding: 16px;
+        }
+
+        .controller-card-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+
+        .controller-card-title { color: #fff; font-size: 19px; font-weight: 700; }
+
+        .offer-row {
+            display: grid;
+            grid-template-columns: 90px minmax(120px, 1fr) 140px auto;
+            gap: 10px;
+            align-items: center;
+            padding: 9px 0;
+            border-top: 1px solid #222;
+        }
+
+        .offer-type { font-weight: 700; font-size: 12px; letter-spacing: .8px; }
+        .offer-type.sell { color: var(--neon-green); }
+        .offer-type.buy { color: #ff8a8a; }
+
+        .gta-map-wrap {
+            position: relative;
+            width: min(100%, 900px);
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
+            border: 1px solid #2a2a2a;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #050505;
+            cursor: crosshair;
+            user-select: none;
+        }
+
+        .gta-map-wrap img {
+            position: absolute;
+            inset: 0;
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            background: #050505;
+            pointer-events: none;
+        }
+
+        .map-pin {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            border: 3px solid #fff;
+            background: var(--primary-blue);
+            border-radius: 50% 50% 50% 0;
+            transform: translate(-50%, -100%) rotate(-45deg);
+            box-shadow: 0 0 14px rgba(55,149,255,.8);
+            z-index: 5;
+        }
+
+        .map-pin.saved {
+            background: var(--neon-green);
+            box-shadow: 0 0 14px rgba(57,255,20,.6);
+        }
+
+        .map-pin-label {
+            position: absolute;
+            transform: translate(-50%, 8px);
+            background: rgba(0,0,0,.88);
+            border: 1px solid #333;
+            color: #fff;
+            padding: 4px 7px;
+            border-radius: 6px;
+            font-size: 11px;
+            white-space: nowrap;
+            z-index: 6;
+            pointer-events: none;
+        }
+
+        .map-help { margin-top: 8px; color: #999; font-size: 13px; }
+        .equipment-items { white-space: pre-line; color: #ddd; line-height: 1.55; }
+
+        /* MENTOR */
+        .mentor-grid {
+            display: grid;
+            grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
+            gap: 20px;
+            align-items: start;
+        }
+        .mentor-list { display: grid; gap: 12px; }
+        .mentor-card { background: #101010; border: 1px solid #2a2a2a; border-radius: 12px; padding: 16px; }
+        .mentor-card.expired { border-color: rgba(255,49,49,.65); }
+        .mentor-card.soon { border-color: rgba(255,210,77,.65); }
+        .mentor-card-head { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; flex-wrap:wrap; }
+        .mentor-card-title { color:#fff; font-size:19px; font-weight:700; }
+        .mentor-badge { display:inline-block; padding:4px 8px; border:1px solid #333; border-radius:999px; font-size:11px; margin-top:5px; }
+        .mentor-note { white-space:pre-line; color:#ddd; line-height:1.5; margin-top:12px; }
+
+        .mentor-task-section { margin-top: 24px; }
+        .mentor-task-grid { display:grid; grid-template-columns:minmax(280px,420px) minmax(0,1fr); gap:20px; align-items:start; }
+        .mentor-task-list { display:grid; gap:12px; }
+        .mentor-task-card { background:#101010; border:1px solid #2a2a2a; border-radius:12px; padding:16px; }
+        .mentor-task-card h4 { margin:0 0 8px; color:#fff; font-size:18px; }
+        .mentor-task-results { display:grid; gap:7px; margin-top:12px; }
+        .mentor-task-result { display:flex; justify-content:space-between; gap:10px; align-items:center; padding:8px 10px; border:1px solid #292929; border-radius:8px; background:#0b0b0b; }
+        .mentor-task-result.success { border-color:rgba(57,255,20,.45); }
+        .mentor-task-result.failed { border-color:rgba(255,49,49,.5); }
+        .mentor-task-status { font-weight:700; }
+        .mentor-task-result.success .mentor-task-status { color:var(--neon-green); }
+        .mentor-task-result.failed .mentor-task-status { color:var(--neon-red); }
+
+        .mentor-task-editor { background:#0b0b0b; border:1px solid #252525; border-radius:10px; padding:14px; margin-bottom:14px; }
+        .mentor-task-editor textarea { min-height:120px; resize:vertical; line-height:1.5; }
+        .mentor-task-description { margin:10px 0; padding:12px; background:#090909; border-left:3px solid var(--primary-blue); border-radius:6px; color:#ddd; line-height:1.5; }
+
+        /* INTRO */
+        .heist-intro {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: grid;
+            place-items: center;
+            overflow: hidden;
+            color: #eaf8ff;
+            background: radial-gradient(circle at 50% 45%, rgba(0, 126, 255, .15), transparent 28rem), #020408;
+            font-family: "Rajdhani", "Segoe UI", sans-serif;
+            opacity: 1;
+            transition: opacity .65s ease, visibility .65s ease;
+        }
+
+        .heist-intro.is-closing { opacity: 0; visibility: hidden; }
+
+        .heist-core { position: relative; z-index: 4; width: min(560px, calc(100vw - 34px)); text-align: center; }
+        .heist-title { color: #fff; font-size: clamp(37px, 8vw, 72px); font-weight: 800; letter-spacing: -.045em; line-height: .95; text-shadow: 0 0 28px rgba(37, 154, 255, .42); }
+        .heist-skip { position: absolute; right: 18px; bottom: 18px; z-index: 8; padding: 9px 13px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); color: #71889a; font: 700 10px monospace; cursor: pointer; }
+
+        /* EGYEDI DROPDOWN */
+        .bs-select-wrap { position:relative; width:100%; margin-bottom:10px; }
+        .bs-select-wrap > select { position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; opacity:0 !important; pointer-events:none !important; margin:0 !important; }
+        .bs-select-trigger { width:100%; min-height:44px; display:flex; align-items:center; justify-content:space-between; gap:12px; text-align:left; padding:11px 13px; background:#101010; border:1px solid #383838; border-radius:8px; color:#f5f5f5; font:inherit; cursor:pointer; }
+        .bs-select-trigger:hover, .bs-select-trigger[aria-expanded="true"] { background:#171717; border-color:var(--primary-blue); box-shadow:0 0 0 2px rgba(55,149,255,.12); outline:none; }
+        .bs-select-value { flex:1; min-width:0; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+        .bs-select-arrow { flex:none; width:9px; height:9px; border-right:2px solid var(--primary-blue); border-bottom:2px solid var(--primary-blue); transform:rotate(45deg) translateY(-2px); }
+        .bs-select-popup { position:fixed; z-index:2147483000; background:#101010; border:1px solid var(--primary-blue); border-radius:10px; padding:6px; box-shadow:0 14px 35px rgba(0,0,0,.85); display:flex; flex-direction:column; gap:5px; overflow:hidden; }
+        .bs-select-search { width:100% !important; flex:none; margin:0 !important; min-height:38px; background:#1b1b1b !important; border:1px solid #393939 !important; color:#fff !important; border-radius:7px; padding:8px 10px !important; }
+        .bs-select-options { overflow-y:auto; overscroll-behavior:contain; max-height:260px; }
+        .bs-select-item { display:block; width:100%; text-align:left; border:0; border-radius:6px; background:transparent; color:#ededed; padding:10px 11px; min-height:38px; font:inherit; font-size:14px; cursor:pointer; }
+        .bs-select-item:hover { background:rgba(55,149,255,.16); color:#fff; }
+        .bs-select-item[aria-selected="true"] { background:rgba(55,149,255,.25); color:#fff; }
+        .bs-select-empty { padding:12px; color:#aaa; font-size:13px; }
+
+        @media (max-width: 900px) {
+            header { flex-direction: column; gap: 10px; }
+            .main-content { padding: 95px 10px 0 10px; }
+            .home-hub, .controller-grid, .mentor-grid, .mentor-task-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="heistIntro" class="heist-intro" role="dialog" aria-label="Blue Syndicate rendszerindítás">
+    <div class="heist-core">
+        <div class="heist-title">BLUE SYNDICATE</div>
+        <p class="muted">HEIST CONTROL // SECURE NETWORK</p>
+    </div>
+    <button class="heist-skip" type="button" onclick="closeHeistIntro()">ÁTUGRÁS [ESC]</button>
+</div>
+
+<div id="modalOverlay" class="modal-overlay">
+    <div id="modalBody" class="modal-content"></div>
+</div>
+
+<header id="siteHeader" style="display:none;">
+    <div class="logo-graffiti">Blue Syndicate</div>
+    <nav id="mainNav"></nav>
+</header>
+
+<div class="main-content" id="mainWrapper" style="display:none;">
+    <div id="főoldal" class="tab-content active">
+        <h1 class="logo-graffiti main-title">Blue Syndicate</h1>
+        <div class="home-hub">
+            <div class="hub-card">
+                <h3>Vezetőség</h3>
+                <p>Pénzügyi, tagkezelő és admin menük.</p>
+                <button class="btn-primary" onclick="openSection('vezetoseg')">VEZETŐSÉG MEGNYITÁSA</button>
+            </div>
+            <div class="hub-card">
+                <h3>Irányító</h3>
+                <p>Maffiák, területek és szükséges felszerelések kezelése.</p>
+                <button class="btn-primary" onclick="openSection('iranyito')">IRÁNYÍTÓ MEGNYITÁSA</button>
+            </div>
+            <div class="hub-card">
+                <h3>Mentor</h3>
+                <p>Mentor–mentorált párosítások és feladatok.</p>
+                <button class="btn-primary" onclick="openSection('mentor')">MENTOR MEGNYITÁSA</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="dashboard" class="tab-content">
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h3>TAGOK SZÁMA</h3>
+                <h1 id="statMembers" class="stat-value">0</h1>
+            </div>
+            <div class="dashboard-card">
+                <h3>EGYENLEG</h3>
+                <h1 id="statBalance" class="stat-value">0 Cs</h1>
+            </div>
+            <div class="dashboard-card">
+                <h3>NAPI PROFIT</h3>
+                <h1 id="statDailyProfit" class="stat-value">0 Cs</h1>
+            </div>
+            <div class="dashboard-card">
+                <h3>HETI PROFIT</h3>
+                <h1 id="statWeeklyProfit" class="stat-value">0 Cs</h1>
+            </div>
+            <div class="dashboard-card">
+                <h3>HAVI PROFIT</h3>
+                <h1 id="statMonthlyProfit" class="stat-value">0 Cs</h1>
+            </div>
+            <div class="dashboard-card danger-zone">
+                <h3 style="color: #ff3131;">TELJES TÖRLÉS</h3>
+                <button onclick="openResetModal()" style="background: rgba(255,49,49,0.2); color: #ff3131; border: 1px solid #ff3131; padding: 10px; cursor: pointer;">
+                    ADATOK TELJES TÖRLÉSE
+                </button>
+            </div>
+            <div class="dashboard-card">
+                <h3>BIZTONSÁGI MENTÉS</h3>
+                <p class="muted">Állapot visszaállítása időpont alapján.</p>
+                <button class="btn-primary" style="width:100%" onclick="openBackupRestoreModal()">MENTÉSEK / VISSZAÁLLÍTÁS</button>
+            </div>
+        </div>
+
+        <h2>Konfiguráció</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            <div class="dashboard-card">
+                <h3>Üzlet Tárgyak</h3>
+                <input type="text" id="inTrade" placeholder="Új tárgy...">
+                <button class="btn-primary" style="width:100%" onclick="addConfig('tradeItems', 'inTrade')">Hozzáadás</button>
+                <table id="tabTrade"><tbody></tbody></table>
+            </div>
+            <div class="dashboard-card">
+                <h3>Könyvelési típusok</h3>
+                <input type="text" id="inAccName" placeholder="Név">
+                <input type="number" id="inAccPrice" placeholder="Ár">
+                <button class="btn-primary" style="width:100%" onclick="addAccType()">Hozzáadás</button>
+                <table id="tabAccType"><tbody></tbody></table>
+            </div>
+            <div class="dashboard-card">
+                <h3>Frakciók</h3>
+                <input type="text" id="inFrac" placeholder="Frakció név...">
+                <button class="btn-primary" style="width:100%" onclick="addConfig('fractions', 'inFrac')">Hozzáadás</button>
+                <table id="tabFrac"><tbody></tbody></table>
+            </div>
+        </div>
+    </div>
+
+    <div id="taglista" class="tab-content">
+        <div class="section-head">
+            <h2>Taglista</h2>
+            <button class="btn-primary" onclick="openMemberModal()">+ Új Tag Felvétele</button>
+        </div>
+        <table id="tabMembers">
+            <thead>
+                <tr>
+                    <th>Becenév</th>
+                    <th>IC Név</th>
+                    <th>Rang</th>
+                    <th>Discord</th>
+                    <th>Tel.</th>
+                    <th>Művelet</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="könyvelés" class="tab-content">
+        <h2>Könyvelés (40% osztás)</h2>
+        <p>Kijelölés gombokkal:</p>
+        <div id="accMemberGrid" style="margin-bottom:20px;"></div>
+
+        <div class="dashboard-card" style="max-width:400px;">
+            <select id="selAccType"></select>
+            <input type="number" id="inAccQty" value="1" min="1">
+            <button class="btn-primary" style="width:100%" onclick="addToCart()">Kosárhoz adás</button>
+            <button class="btn-danger" style="width:100%; margin-top:5px;" onclick="finalizeCart()">Összes rögzítése</button>
+            <div id="accCartList" style="margin-top:15px;"></div>
+        </div>
+
+        <h3>Könyvelési Napló</h3>
+        <table id="tabAccLog">
+            <thead>
+                <tr>
+                    <th>Idő</th>
+                    <th>Típus</th>
+                    <th>Összeg</th>
+                    <th>Résztvevők</th>
+                    <th>Jutalék/fő</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="üzletek" class="tab-content">
+        <h2>Üzletek</h2>
+        <div class="dashboard-card" style="max-width:500px;">
+            <input type="text" id="trPartner" placeholder="Partner neve">
+            <div class="trade-toggle-group">
+                <button id="btnElad" onclick="setTrType('eladas')">ELADÁS</button>
+                <button id="btnVetel" onclick="setTrType('vetel')">VÉTEL</button>
+            </div>
+            <select id="selTrItem"></select>
+            <input type="number" id="trAmt" placeholder="Összeg">
+            <button class="btn-primary" style="width:100%" onclick="processTrade()">Mentés</button>
+        </div>
+
+        <table id="tabTradeLog">
+            <thead>
+                <tr>
+                    <th>Idő</th>
+                    <th>Partner</th>
+                    <th>Típus</th>
+                    <th>Tárgy</th>
+                    <th>Összeg</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="pénzmozgás" class="tab-content">
+        <h1 id="totalBal">0 Cs</h1>
+        <div class="dashboard-card" style="max-width:400px; margin:auto;">
+            <input type="text" id="cashNote" placeholder="Mozgás indoka">
+            <input type="number" id="cashAmt" placeholder="Összeg">
+            <button class="btn-primary" style="width:100%; margin-bottom:10px;" onclick="cashOp('BE')">Berakás</button>
+            <button class="btn-danger" style="width:100%" onclick="cashOp('KI')">Kivétel</button>
+        </div>
+        <table id="tabCashLog">
+            <thead>
+                <tr>
+                    <th>Idő</th>
+                    <th>Típus</th>
+                    <th>Indok</th>
+                    <th>Összeg</th>
+                    <th>Egyenleg</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
+
+    <div id="árak" class="tab-content">
+        <div class="section-head"><h2>Árak</h2></div>
+        <div class="dashboard-card" style="max-width:600px; margin-bottom:20px;">
+            <select id="priceFaction"></select>
+            <input type="text" id="priceItem" placeholder="Mit árul?">
+            <input type="number" id="priceValue" placeholder="Mennyiért?">
+            <button class="btn-primary" style="width:100%" onclick="addPriceItem()">Mentés</button>
+        </div>
+        <input type="text" id="priceSearch" placeholder="Keresés tárgyra vagy frakcióra..." oninput="render()">
+        <div id="priceGroups"></div>
+    </div>
+
+    <div id="telefonkönyv" class="tab-content">
+        <h2>Telefonkönyv</h2>
+        <div class="dashboard-card" style="max-width:500px;">
+            <input type="text" id="phName" placeholder="Név">
+            <input type="text" id="phNum" placeholder="Telefonszám">
+            <select id="phFracSelect"></select>
+            <button class="btn-primary" style="width:100%" onclick="addContact()">Mentés</button>
+        </div>
+        <div id="phGroups"></div>
+    </div>
+
+    <div id="mentor" class="tab-content">
+        <div class="section-head"><h2>Mentor</h2></div>
+        <div class="mentor-grid">
+            <div class="dashboard-card">
+                <h3 id="mentorFormTitle">Mentorálás rögzítése</h3>
+                <label>Mentorált</label>
+                <select id="mentorMentee"></select>
+                <label>Mentor</label>
+                <select id="mentorMentor"></select>
+                <label>Mentorálás vége</label>
+                <input id="mentorExpiresAt" type="date">
+                <label>Jegyzet a mentoráltról</label>
+                <textarea id="mentorNote" rows="7" placeholder="Fejlődés, tapasztalatok..."></textarea>
+                <button class="btn-primary" style="width:100%" onclick="saveMentorship()">MENTÉS</button>
+                <button id="mentorCancelEdit" class="hidden" style="width:100%; margin-top:8px;" onclick="cancelMentorshipEdit()">MÉGSE</button>
+            </div>
+            <div>
+                <input id="mentorSearch" type="text" placeholder="Keresés..." oninput="renderMentor()">
+                <div id="mentorList" class="mentor-list"></div>
+            </div>
+        </div>
+
+        <div class="mentor-task-section">
+            <div class="section-head"><h3>Mentor feladatok</h3></div>
+            <div class="mentor-task-grid">
+                <div class="dashboard-card">
+                    <h3>10 feladat</h3>
+                    <div id="mentorTaskInputs"></div>
+                    <button class="btn-primary" style="width:100%" onclick="saveMentorTasks()">FELADATOK MENTÉSE</button>
+                </div>
+                <div>
+                    <div class="dashboard-card">
+                        <h3>Teljesítés rögzítése</h3>
+                        <label>Aktív mentorált</label>
+                        <select id="mentorTaskMentee"></select>
+                        <label>Feladat</label>
+                        <select id="mentorTaskSelect"></select>
+                        <label>Eredmény</label>
+                        <select id="mentorTaskResult">
+                            <option value="success">Sikeres</option>
+                            <option value="failed">Sikertelen</option>
+                        </select>
+                        <button class="btn-primary" style="width:100%" onclick="saveMentorTaskResult()">EREDMÉNY MENTÉSE</button>
+                    </div>
+                    <div id="mentorTaskList" class="mentor-task-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="tab-content">
+        <div class="section-head"><h2>Admin Panel</h2></div>
+        <div class="dashboard-grid">
+            <div class="dashboard-card">
+                <h3>Aktuális hozzáférés</h3>
+                <p><strong>Email:</strong> <span id="currentUserEmailText">-</span></p>
+                <p><strong>Rang:</strong> <span id="currentUserRoleText">Rookie</span></p>
+            </div>
+            <div class="dashboard-card">
+                <h3>Email alapú jogkezelés</h3>
+                <input type="email" id="permEmail" placeholder="Felhasználó email címe">
+                <select id="permRole">
+                    <option value="Prodigy">Prodigy</option>
+                    <option value="Organizer">Organizer</option>
+                    <option value="Operator">Operator</option>
+                    <option value="Specialist">Specialist</option>
+                    <option value="Enforcer">Enforcer</option>
+                    <option value="Hunter">Hunter</option>
+                    <option value="Rebel">Rebel</option>
+                    <option value="Outsider">Outsider</option>
+                    <option value="Rookie">Rookie</option>
+                </select>
+                <button class="btn-primary" style="width:100%" onclick="addPermissionUser()">Jog mentése</button>
+                <table style="margin-top:15px;">
+                    <thead>
+                        <tr>
+                            <th>Email</th>
+                            <th>Rang</th>
+                            <th>Művelet</th>
+                        </tr>
+                    </thead>
+                    <tbody id="adminUsersTable"></tbody>
+                </table>
+            </div>
+            <div class="dashboard-card">
+                <h3>Menüpont láthatóság</h3>
+                <div id="adminTabVisibility"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="leltár" class="tab-content">
+        <div class="section-head">
+            <h2>Leltár</h2>
+            <button class="btn-primary" onclick="openInventoryModal()">+ Új tétel</button>
+        </div>
+        <div class="inventory-stats">
+            <div class="inventory-stat"><span class="muted">Tételek</span><strong id="inventoryStatItems">0</strong></div>
+            <div class="inventory-stat"><span class="muted">Összes készlet</span><strong id="inventoryStatQty">0</strong></div>
+            <div class="inventory-stat"><span class="muted">Kategóriák</span><strong id="inventoryStatCategories">0</strong></div>
+        </div>
+        <div class="inventory-toolbar">
+            <input type="text" id="inventorySearch" placeholder="Keresés..." oninput="renderInventory()">
+            <select id="inventoryCategoryFilter" onchange="renderInventory()"><option value="">Minden kategória</option></select>
+            <button onclick="clearInventoryFilters()">Szűrők törlése</button>
+        </div>
+        <div class="dashboard-card">
+            <table id="tabInventory">
+                <thead>
+                    <tr>
+                        <th>Tétel</th>
+                        <th>Kategória</th>
+                        <th>Mennyiség</th>
+                        <th>Megjegyzés</th>
+                        <th>Módosítás</th>
+                        <th>Művelet</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+        <div class="section-head" style="margin-top: 20px;"><h3>Leltárnapló</h3></div>
+        <div class="dashboard-card">
+            <table id="tabInventoryLog">
+                <thead>
+                    <tr>
+                        <th>Idő</th>
+                        <th>Tétel</th>
+                        <th>Változás</th>
+                        <th>Készlet</th>
+                        <th>Módosította</th>
+                        <th>Megjegyzés</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="iranyito-maffia" class="tab-content">
+        <div class="section-head"><h2>Irányító / Maffia</h2></div>
+        <div class="controller-grid">
+            <div class="dashboard-card">
+                <h3>Maffia és ár</h3>
+                <input id="mafiaName" type="text" placeholder="Maffia neve">
+                <select id="mafiaOfferType">
+                    <option value="sell">ELADÁS</option>
+                    <option value="buy">VÉTEL</option>
+                </select>
+                <input id="mafiaItem" type="text" placeholder="Tárgy">
+                <input id="mafiaPrice" type="number" min="0" placeholder="Ár (Cs)">
+                <button class="btn-primary" style="width:100%" onclick="addMafiaOffer()">MENTÉS</button>
+            </div>
+            <div>
+                <input id="mafiaSearch" type="text" placeholder="Keresés..." oninput="renderController()">
+                <div id="mafiaList" class="controller-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="iranyito-terulet" class="tab-content">
+        <div class="section-head"><h2>Irányító / Terület</h2></div>
+        <div class="controller-grid">
+            <div class="dashboard-card">
+                <h3>Terület és ár</h3>
+                <input id="territoryName" type="text" placeholder="Terület neve">
+                <select id="territoryOfferType">
+                    <option value="sell">ELADÁS</option>
+                    <option value="buy">VÉTEL</option>
+                </select>
+                <input id="territoryItem" type="text" placeholder="Tárgy">
+                <input id="territoryPrice" type="number" min="0" placeholder="Ár (Cs)">
+                <input id="territoryNote" type="text" placeholder="Megjegyzés">
+                <div id="territoryPointText" class="map-help">Nincs kijelölt pont.</div>
+                <button class="btn-primary" style="width:100%; margin-top:10px;" onclick="addTerritoryOffer()">MENTÉS</button>
+                <button style="width:100%; margin-top:6px;" onclick="clearTerritoryForm()">ŰRLAP TÖRLÉSE</button>
+            </div>
+            <div>
+                <div id="gtaTerritoryMap" class="gta-map-wrap" onclick="setTerritoryPoint(event)">
+                    <!-- Külső megbízható GTA V térkép betöltése, elkerülve a Firestore 1MB-os méretkorlátját és fagyását -->
+                    <img alt="GTA V térkép" src="https://gta-5-map.com/media/maps/radar.jpg">
+                    <div id="territoryPins"></div>
+                </div>
+            </div>
+        </div>
+        <div style="margin-top:20px;">
+            <input id="territorySearch" type="text" placeholder="Keresés..." oninput="renderController()">
+            <div id="territoryList" class="controller-list"></div>
+        </div>
+    </div>
+
+    <div id="iranyito-felszereles" class="tab-content">
+        <div class="section-head"><h2>Irányító / Felszerelés</h2></div>
+        <div class="controller-grid">
+            <div class="dashboard-card">
+                <h3>Felszerelési lista</h3>
+                <select id="equipmentType">
+                    <option value="Bank">Bank</option>
+                    <option value="Random akció">Random akció</option>
+                    <option value="Terület">Terület</option>
+                </select>
+                <input id="equipmentName" type="text" placeholder="Akció neve">
+                <textarea id="equipmentItems" rows="8" placeholder="Szükséges felszerelés soronként..."></textarea>
+                <textarea id="equipmentNote" rows="3" placeholder="Megjegyzés"></textarea>
+                <button class="btn-primary" style="width:100%" onclick="saveEquipmentEntry()">MENTÉS</button>
+            </div>
+            <div>
+                <input id="equipmentSearch" type="text" placeholder="Keresés..." oninput="renderController()">
+                <div id="equipmentList" class="controller-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="fekete-lista" class="tab-content">
+        <h2>Blacklist</h2>
+        <div class="dashboard-card">
+            <input id="blN" placeholder="Név">
+            <input id="blI" placeholder="Indok">
+            <button class="btn-danger" style="width:100%" onclick="addBL()">Tiltás</button>
+        </div>
+        <table id="tabBL"><tbody></tbody></table>
+    </div>
+</div>
+
+<!-- JELSZÓVÉDETT RESET MODAL -->
+<div id="resetModal" style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.9); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: #111; border: 2px solid #ff3131; padding: 30px; border-radius: 10px; text-align: center; max-width: 420px; width: 90%;">
+        <h2 style="color: #ff3131;">ADATTÖRLÉS MEGERŐSÍTÉSE</h2>
+        <p>Biztosan ki szeretnél törölni MINDEN adatot? A folyamat nem vonható vissza!</p>
+        <p style="color: #ff8888; font-size: 13px;">A megerősítéshez írd be a jelszót: <strong>FULLSHUTDOWN</strong></p>
+        <input type="password" id="resetPasswordInput" placeholder="Jelszó beírása..." style="margin-bottom: 15px; text-align: center;">
+        <div style="display: flex; gap: 10px; justify-content: center;">
+            <button onclick="closeResetModal()" style="padding: 10px 20px;">MÉGSE</button>
+            <button onclick="hardReset()" style="background: #ff3131; color: white; border: none; padding: 10px 20px; cursor: pointer;">TÖRLÉS</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+
+<script>
+    function closeHeistIntro() {
+        const intro = document.getElementById('heistIntro');
+        if (!intro) return;
+        intro.classList.add('is-closing');
+        setTimeout(() => intro.remove(), 700);
+    }
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') closeHeistIntro();
+    });
+
+    const LEADERSHIP_MENU = ["dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "leltár", "fekete-lista", "admin-panel"];
+    const CONTROL_MENU = ["iranyito-maffia", "iranyito-terulet", "iranyito-felszereles"];
+    const MENTOR_MENU = ["mentor"];
+    const MENU = ["főoldal", ...LEADERSHIP_MENU, ...CONTROL_MENU, ...MENTOR_MENU];
+
+    const RANK_ORDER = ["Prodigy", "Organizer", "Operator", "Specialist", "Enforcer", "Hunter", "Rebel", "Outsider", "Rookie"];
+
+    function getRankIndex(rank) {
+        const i = RANK_ORDER.indexOf(rank);
+        return i === -1 ? 999 : i;
+    }
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCbNX5_JbOcQ4F-QKTmiNR6qp7_9m_HQEE",
+        authDomain: "blue-syndicate.firebaseapp.com",
+        projectId: "blue-syndicate",
+        storageBucket: "blue-syndicate.firebasestorage.app",
+        messagingSenderId: "660554152192",
+        appId: "1:660554152192:web:71dd410897c4a914271be5",
+        measurementId: "G-EXX7WELQDS"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const firestore = firebase.firestore();
+    const DB_DOC = firestore.collection("shared").doc("mainData");
+    const BACKUP_COLLECTION = firestore.collection("sharedBackups");
+
+    let db = getDefaultDb();
+    let currentTrType = null;
+    let selectedAccMembers = new Set();
+    let isSyncReady = false;
+    let lastRenderedBalance = 0;
+    let currentUserEmail = "";
+    let currentUserRole = "Rookie";
+    let pendingTerritoryPoint = null;
+    let editingEquipmentIndex = -1;
+    let editingMentorshipId = null;
+    let saveQueue = Promise.resolve();
+    let localRevision = 0;
+    let lastRemoteRevision = 0;
+    let lastSyncedDb = getDefaultDb();
+    let unsubscribeMainData = null;
+    const LOCAL_BACKUP_KEY = "blueSyndicate_mainData_backup_v2";
+    const pendingTopLevelChanges = new Map();
+    let saveInProgress = false;
+
+    function getDefaultDb() {
+        return {
+            members: [],
+            balance: 0,
+            config: { tradeItems: [], fractions: [], accTypes: [] },
+            logs: { trade: [], cash: [], acc: [] },
+            contacts: [],
+            blacklist: [],
+            accCart: [],
+            prices: [],
+            inventory: [],
+            inventoryLog: [],
+            permissions: { users: [] },
+            hiddenTabs: [],
+            mentorships: [],
+            mentorTasks: Array.from({ length: 10 }, () => ''),
+            mentorTaskDescriptions: Array.from({ length: 10 }, () => ''),
+            mentorTaskResults: [],
+            controller: { mafias: [], territories: [], equipment: [] }
+        };
+    }
+
+    function getRoleByEmail(email) {
+        if (!email) return "Rookie";
+        const superAdmins = ["bluesyndicatebs@gmail.com", "lefkovitshunor@gmail.com"];
+        const normalizedEmail = email.toLowerCase().trim();
+        if (superAdmins.includes(normalizedEmail)) return "Prodigy";
+
+        const users = Array.isArray(db.permissions?.users) ? db.permissions.users : [];
+        const found = users.find(u => (u.email || "").toLowerCase() === normalizedEmail);
+        return found?.role || "Rookie";
+    }
+
+    function isFullAdmin() {
+        return ["Prodigy", "Organizer", "Operator"].includes(currentUserRole);
+    }
+
+    function canUseAccounting() {
+        return ["Prodigy", "Organizer", "Operator"].includes(currentUserRole);
+    }
+
+    function canSeeTab(tabId) {
+        const hiddenTabs = Array.isArray(db.hiddenTabs) ? db.hiddenTabs : [];
+        const fullAccessRoles = ["Prodigy", "Organizer", "Operator"];
+        if (hiddenTabs.includes(tabId) && !fullAccessRoles.includes(currentUserRole)) return false;
+        if (tabId === "főoldal") return true;
+        if (fullAccessRoles.includes(currentUserRole)) return true;
+        if (currentUserRole === "Specialist") return CONTROL_MENU.includes(tabId) || MENTOR_MENU.includes(tabId);
+        return MENTOR_MENU.includes(tabId);
+    }
+
+    function requireFullAdmin() {
+        if (!isFullAdmin()) {
+            customAlert("Ehhez nincs jogosultságod.");
+            return false;
+        }
+        return true;
+    }
+
+    function requireAccountingAccess() {
+        if (!canUseAccounting()) {
+            customAlert("Ehhez nincs jogosultságod.");
+            return false;
+        }
+        return true;
+    }
+
+    function sanitizeDbForSave(source) {
+        const defaults = getDefaultDb();
+        const merged = { ...defaults, ...(source || {}) };
+
+        merged.balance = Number(merged.balance || 0);
+        if (!Number.isFinite(merged.balance)) merged.balance = 0;
+
+        merged.config = {
+            tradeItems: Array.isArray(merged.config?.tradeItems) ? merged.config.tradeItems : [],
+            fractions: Array.isArray(merged.config?.fractions) ? merged.config.fractions : [],
+            accTypes: Array.isArray(merged.config?.accTypes) ? merged.config.accTypes : []
+        };
+        merged.logs = {
+            trade: Array.isArray(merged.logs?.trade) ? merged.logs.trade : [],
+            cash: Array.isArray(merged.logs?.cash) ? merged.logs.cash : [],
+            acc: Array.isArray(merged.logs?.acc) ? merged.logs.acc : []
+        };
+        merged.members = Array.isArray(merged.members) ? merged.members : [];
+        merged.prices = Array.isArray(merged.prices) ? merged.prices : [];
+        merged.inventory = Array.isArray(merged.inventory) ? merged.inventory : [];
+        merged.inventoryLog = Array.isArray(merged.inventoryLog) ? merged.inventoryLog : [];
+        merged.accCart = Array.isArray(merged.accCart) ? merged.accCart : [];
+        merged.contacts = Array.isArray(merged.contacts) ? merged.contacts : [];
+        merged.blacklist = Array.isArray(merged.blacklist) ? merged.blacklist : [];
+        merged.mentorships = Array.isArray(merged.mentorships) ? merged.mentorships : [];
+        merged.mentorTasks = Array.isArray(merged.mentorTasks) ? merged.mentorTasks.slice(0, 10).map(x => String(x || '')) : Array(10).fill('');
+        merged.mentorTaskDescriptions = Array.isArray(merged.mentorTaskDescriptions) ? merged.mentorTaskDescriptions.slice(0, 10).map(x => String(x || '')) : Array(10).fill('');
+        merged.mentorTaskResults = Array.isArray(merged.mentorTaskResults) ? merged.mentorTaskResults : [];
+        merged.permissions = { users: Array.isArray(merged.permissions?.users) ? merged.permissions.users : [] };
+        merged.hiddenTabs = Array.isArray(merged.hiddenTabs) ? merged.hiddenTabs : [];
+        merged.controller = {
+            mafias: Array.isArray(merged.controller?.mafias) ? merged.controller.mafias : [],
+            territories: Array.isArray(merged.controller?.territories) ? merged.controller.territories : [],
+            equipment: Array.isArray(merged.controller?.equipment) ? merged.controller.equipment : []
+        };
+
+        return JSON.parse(JSON.stringify(merged));
+    }
+
+    function cloneValue(val) {
+        return JSON.parse(JSON.stringify(val));
+    }
+
+    function writeLocalRecoveryCopy(source) {
+        try {
+            localStorage.setItem(LOCAL_BACKUP_KEY, JSON.stringify({
+                savedAt: Date.now(),
+                data: sanitizeDbForSave(source)
+            }));
+        } catch (_) {}
+    }
+
+    function readLocalRecoveryCopy() {
+        try {
+            const p = JSON.parse(localStorage.getItem(LOCAL_BACKUP_KEY) || "null");
+            return p ? sanitizeDbForSave(p.data) : null;
+        } catch (_) { return null; }
+    }
+
+    async function flushPendingChanges() {
+        if (saveInProgress || pendingTopLevelChanges.size === 0) return true;
+        saveInProgress = true;
+
+        try {
+            while (pendingTopLevelChanges.size > 0) {
+                const batch = new Map();
+                pendingTopLevelChanges.forEach((v, k) => batch.set(k, cloneValue(v)));
+
+                const result = await firestore.runTransaction(async tx => {
+                    const snap = await tx.get(DB_DOC);
+                    const remoteRaw = snap.exists ? (snap.data() || {}) : getDefaultDb();
+                    const remote = sanitizeDbForSave(remoteRaw);
+
+                    batch.forEach((v, k) => { remote[k] = cloneValue(v); });
+
+                    const remoteRevision = Number(remoteRaw._clientRevision || 0);
+                    const nextRevision = Math.max(localRevision, remoteRevision) + 1;
+                    remote._clientRevision = nextRevision;
+                    remote._updatedAt = Date.now();
+                    tx.set(DB_DOC, remote, { merge: false });
+                    return { remote, nextRevision };
+                });
+
+                batch.forEach((savedVal, k) => {
+                    const curr = pendingTopLevelChanges.get(k);
+                    if (curr !== undefined && JSON.stringify(curr) === JSON.stringify(savedVal)) {
+                        pendingTopLevelChanges.delete(k);
+                    }
+                });
+
+                localRevision = result.nextRevision;
+                lastRemoteRevision = result.nextRevision;
+                lastSyncedDb = sanitizeDbForSave(result.remote);
+                db = sanitizeDbForSave(result.remote);
+                writeLocalRecoveryCopy(db);
+                render();
+            }
+            return true;
+        } catch (err) {
+            console.error("Mentési hiba:", err);
+            return false;
+        } finally {
+            saveInProgress = false;
+        }
+    }
+
+    function save() {
+        db = sanitizeDbForSave(db);
+        Object.keys(db).forEach(k => {
+            if (!k.startsWith('_')) pendingTopLevelChanges.set(k, cloneValue(db[k]));
+        });
+        writeLocalRecoveryCopy(db);
+        render();
+
+        saveQueue = saveQueue.catch(() => false).then(() => flushPendingChanges());
+        return saveQueue;
+    }
+
+    function saveSections(keys) {
+        db = sanitizeDbForSave(db);
+        keys.forEach(k => {
+            if (k in db) pendingTopLevelChanges.set(k, cloneValue(db[k]));
+        });
+        writeLocalRecoveryCopy(db);
+        render();
+
+        saveQueue = saveQueue.catch(() => false).then(() => flushPendingChanges());
+        return saveQueue;
+    }
+
+    function nowString() {
+        return new Date().toLocaleString('hu-HU');
+    }
+
+    function openResetModal() {
+        if (!requireFullAdmin()) return;
+        const input = document.getElementById('resetPasswordInput');
+        if (input) input.value = '';
+        document.getElementById('resetModal').style.display = 'flex';
+    }
+
+    function closeResetModal() {
+        document.getElementById('resetModal').style.display = 'none';
+    }
+
+    async function hardReset() {
+        if (!requireFullAdmin()) return;
+
+        const input = document.getElementById('resetPasswordInput');
+        const enteredPassword = (input?.value || '').trim();
+
+        if (enteredPassword !== 'FULLSHUTDOWN') {
+            return customAlert("Hibás jelszó! A törlés megszakítva.");
+        }
+
+        try {
+            await createBackupSnapshot(db, "pre_reset");
+            pendingTopLevelChanges.clear();
+            db = getDefaultDb();
+            selectedAccMembers.clear();
+            localRevision += 1;
+            const payload = { ...db, _clientRevision: localRevision, _updatedAt: Date.now() };
+            await DB_DOC.set(payload, { merge: false });
+            lastSyncedDb = sanitizeDbForSave(payload);
+            writeLocalRecoveryCopy(payload);
+            closeResetModal();
+            render();
+            customAlert("Minden adat törölve! A törlés előtti állapotról biztonsági mentés készült.");
+        } catch (err) {
+            console.error(err);
+            customAlert("Hiba történt törlés közben: " + err.message);
+        }
+    }
+
+    async function createBackupSnapshot(source, reason = "auto") {
+        try {
+            await BACKUP_COLLECTION.add({
+                createdAt: Date.now(),
+                createdBy: currentUserEmail || "",
+                reason,
+                data: sanitizeDbForSave(source)
+            });
+            return true;
+        } catch (_) { return false; }
+    }
+
+    function setupRealtimeSync() {
+        if (unsubscribeMainData) unsubscribeMainData();
+        unsubscribeMainData = DB_DOC.onSnapshot((docSnap) => {
+            isSyncReady = true;
+            if (docSnap.exists) {
+                const data = docSnap.data() || {};
+                const remoteRevision = Number(data._clientRevision || 0);
+                localRevision = Math.max(localRevision, remoteRevision);
+                lastRemoteRevision = Math.max(lastRemoteRevision, remoteRevision);
+
+                if (pendingTopLevelChanges.size === 0) {
+                    db = sanitizeDbForSave(data);
+                    lastSyncedDb = sanitizeDbForSave(data);
+                    writeLocalRecoveryCopy(db);
+                }
+            } else {
+                db = readLocalRecoveryCopy() || getDefaultDb();
+                save();
+            }
+            currentUserRole = getRoleByEmail(currentUserEmail);
+            buildMenu();
+            render();
+        });
+    }
+
+    function showModal(html) {
+        const overlay = document.getElementById('modalOverlay');
+        const body = document.getElementById('modalBody');
+        if (!overlay || !body) return;
+        body.innerHTML = html;
+        overlay.style.display = 'flex';
+    }
+
+    function closeModal() {
+        const overlay = document.getElementById('modalOverlay');
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    function customAlert(msg) {
+        showModal(`<h3>Értesítés</h3><p>${msg}</p><button class="btn-primary" onclick="closeModal()" style="width:100%">OK</button>`);
+    }
+
+    function customConfirm(msg, onConfirm) {
+        showModal(`
+            <h3>Megerősítés</h3>
+            <p>${msg}</p>
+            <div style="display:flex; gap:10px;">
+                <button class="btn-danger" style="flex:1" id="confirmYes">IGEN</button>
+                <button class="btn-primary" style="flex:1" onclick="closeModal()">MÉGSE</button>
+            </div>
+        `);
+        document.getElementById('confirmYes').onclick = () => {
+            closeModal();
+            onConfirm();
+        };
+    }
+
+    function showTab(id) {
+        if (!canSeeTab(id)) return customAlert("Nincs jogosultságod ehhez.");
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.getElementById(id)?.classList.add('active');
+
+        document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+        document.getElementById('btn-' + id)?.classList.add('active');
+
+        if (id === 'mentor') renderMentor();
+        else if (id === 'leltár') renderInventory();
+        else if (id.startsWith('iranyito-')) renderController();
+        else render();
+    }
+
+    function openSection(sec) {
+        if (sec === 'vezetoseg') showTab(LEADERSHIP_MENU.find(t => canSeeTab(t)) || 'főoldal');
+        else if (sec === 'iranyito') showTab(CONTROL_MENU.find(t => canSeeTab(t)) || 'főoldal');
+        else if (sec === 'mentor') showTab('mentor');
+    }
+
+    function buildMenu() {
+        const nav = document.getElementById('mainNav');
+        if (!nav) return;
+        const visible = MENU.filter(tab => canSeeTab(tab));
+        nav.innerHTML = visible.map(m =>
+            `<button onclick="showTab('${m}')" id="btn-${m}">${m === 'főoldal' ? 'FŐOLDAL' : m.toUpperCase()}</button>`
+        ).join('') + `<button onclick="logout()">LOGOUT</button>`;
+    }
+
+    function calculateProfits() {
+        const logs = Array.isArray(db.logs?.cash) ? db.logs.cash : [];
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+        const startOfWeek = new Date(now.setDate(now.getDate() - (now.getDay() || 7) + 1)).setHours(0, 0, 0, 0);
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+
+        let daily = 0, weekly = 0, monthly = 0;
+        logs.forEach(l => {
+            const ts = Number(l.ts || 0);
+            const val = Number(l.val || 0);
+            if (ts >= startOfDay) daily += val;
+            if (ts >= startOfWeek) weekly += val;
+            if (ts >= startOfMonth) monthly += val;
+        });
+        return { daily, weekly, monthly };
+    }
+
+    function escapeHtml(str) {
+        return String(str || '').replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+    }
+
+    function escapeAttr(str) {
+        return escapeHtml(str);
+    }
+
+    function render() {
+        const curBal = Number(db.balance || 0);
+        const { daily, weekly, monthly } = calculateProfits();
+
+        const totEl = document.getElementById('totalBal');
+        const statBalEl = document.getElementById('statBalance');
+        if (totEl) totEl.innerText = curBal.toLocaleString() + " Cs";
+        if (statBalEl) statBalEl.innerText = curBal.toLocaleString() + " Cs";
+
+        const memEl = document.getElementById('statMembers');
+        if (memEl) memEl.innerText = (db.members || []).length;
+
+        document.getElementById('statDailyProfit').innerText = daily.toLocaleString() + " Cs";
+        document.getElementById('statWeeklyProfit').innerText = weekly.toLocaleString() + " Cs";
+        document.getElementById('statMonthlyProfit').innerText = monthly.toLocaleString() + " Cs";
+
+        // Taglista
+        const mBody = document.querySelector('#tabMembers tbody');
+        if (mBody) {
+            mBody.innerHTML = (db.members || []).map((m, i) => `
+                <tr>
+                    <td>${escapeHtml(m.nick || '-')}</td>
+                    <td>${escapeHtml(m.ic || '')}</td>
+                    <td>${escapeHtml(m.rank || '')}</td>
+                    <td>${escapeHtml(m.dc || '')}</td>
+                    <td>${escapeHtml(m.tel || '')}</td>
+                    <td>
+                        <button onclick="openMemberModal(${i})">Szerk.</button>
+                        <button class="btn-danger" onclick="deleteMember(${i})">Törlés</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Könyvelési grid
+        const accGrid = document.getElementById('accMemberGrid');
+        if (accGrid) {
+            accGrid.innerHTML = (db.members || []).map((m, i) => `
+                <div class="member-card ${selectedAccMembers.has(i) ? 'selected' : ''}" onclick="toggleAccMember(${i})">
+                    ${escapeHtml(m.nick || m.ic || '')}
+                </div>
+            `).join('');
+        }
+
+        // Fill selects
+        const fill = (id, list, v, t) => {
+            const el = document.getElementById(id);
+            if (!el) return;
+            el.innerHTML = (list || []).map(it => `<option value="${escapeAttr(v ? it[v] : it)}">${escapeHtml(t ? it[t] : it)}</option>`).join('');
+        };
+        fill('selTrItem', db.config.tradeItems);
+        fill('phFracSelect', db.config.fractions);
+        fill('selAccType', db.config.accTypes, 'price', 'name');
+        fill('priceFaction', db.config.fractions);
+
+        renderCart();
+        renderAdminPanel();
+    }
+
+    function toggleAccMember(i) {
+        if (selectedAccMembers.has(i)) selectedAccMembers.delete(i);
+        else selectedAccMembers.add(i);
+        render();
+    }
+
+    function addToCart() {
+        if (!requireAccountingAccess()) return;
+        const sel = document.getElementById('selAccType');
+        const price = Number(sel?.value);
+        const qty = parseInt(document.getElementById('inAccQty')?.value, 10);
+        if (!sel || isNaN(price) || isNaN(qty) || qty <= 0) return customAlert("Érvénytelen adat.");
+
+        db.accCart.push({ name: sel.options[sel.selectedIndex].text, price, qty });
+        document.getElementById('inAccQty').value = 1;
+        saveSections(['accCart']);
+    }
+
+    function removeFromCart(i) {
+        db.accCart.splice(i, 1);
+        saveSections(['accCart']);
+    }
+
+    function renderCart() {
+        const el = document.getElementById('accCartList');
+        if (!el) return;
+        let total = 0;
+        el.innerHTML = (db.accCart || []).map((it, i) => {
+            const rowTot = it.price * it.qty;
+            total += rowTot;
+            return `<div>${escapeHtml(it.name)} × ${it.qty} = ${rowTot.toLocaleString()} Cs <button onclick="removeFromCart(${i})">X</button></div>`;
+        }).join('') + `<br><strong>Összesen: ${total.toLocaleString()} Cs</strong>`;
+    }
+
+    function finalizeCart() {
+        if (!requireAccountingAccess()) return;
+        if ((db.accCart || []).length === 0 || selectedAccMembers.size === 0) return customAlert("Nincs tétel vagy kijelölt tag!");
+
+        const total = db.accCart.reduce((sum, it) => sum + (it.price * it.qty), 0);
+        const share = Math.floor((total * 0.4) / selectedAccMembers.size);
+        const peps = Array.from(selectedAccMembers).map(i => db.members[i]?.ic).filter(Boolean);
+
+        selectedAccMembers.forEach(i => {
+            if (db.members[i]) db.members[i].pay = (db.members[i].pay || 0) + share;
+        });
+
+        db.logs.acc.push({
+            time: nowString(),
+            ts: Date.now(),
+            type: "Kosár",
+            total,
+            peps: peps.join(', '),
+            share
+        });
+
+        db.accCart = [];
+        selectedAccMembers.clear();
+        saveSections(['members', 'logs', 'accCart']);
+    }
+
+    function renderAdminPanel() {
+        const uTbl = document.getElementById('adminUsersTable');
+        if (uTbl) {
+            uTbl.innerHTML = (db.permissions?.users || []).map((u, i) => `
+                <tr>
+                    <td>${escapeHtml(u.email)}</td>
+                    <td>${escapeHtml(u.role)}</td>
+                    <td><button class="btn-danger" onclick="deletePermissionUser(${i})">Törlés</button></td>
+                </tr>
+            `).join('');
+        }
+        document.getElementById('currentUserRoleText').innerText = currentUserRole;
+        document.getElementById('currentUserEmailText').innerText = currentUserEmail;
+    }
+
+    function addPermissionUser() {
+        if (!requireFullAdmin()) return;
+        const email = document.getElementById('permEmail')?.value.trim().toLowerCase();
+        const role = document.getElementById('permRole')?.value;
+        if (!email) return customAlert("Hiányzó email.");
+
+        db.permissions.users.push({ email, role });
+        saveSections(['permissions']);
+    }
+
+    function deletePermissionUser(i) {
+        if (!requireFullAdmin()) return;
+        db.permissions.users.splice(i, 1);
+        saveSections(['permissions']);
+    }
+
+    function addConfig(key, id) {
+        if (!requireFullAdmin()) return;
+        const val = document.getElementById(id)?.value.trim();
+        if (!val) return;
+        db.config[key].push(val);
+        document.getElementById(id).value = '';
+        saveSections(['config']);
+    }
+
+    function addAccType() {
+        if (!requireFullAdmin()) return;
+        const name = document.getElementById('inAccName')?.value.trim();
+        const price = Number(document.getElementById('inAccPrice')?.value);
+        if (!name || isNaN(price)) return;
+        db.config.accTypes.push({ name, price });
+        document.getElementById('inAccName').value = '';
+        document.getElementById('inAccPrice').value = '';
+        saveSections(['config']);
+    }
+
+    function processTrade() {
+        if (!requireFullAdmin()) return;
+        const p = document.getElementById('trPartner')?.value.trim();
+        const a = parseInt(document.getElementById('trAmt')?.value, 10);
+        const itm = document.getElementById('selTrItem')?.value;
+        if (!p || isNaN(a) || !currentTrType) return customAlert("Hiányos adatok.");
+
+        const diff = currentTrType === 'eladas' ? a : -a;
+        db.balance += diff;
+        db.logs.trade.push({ time: nowString(), p, type: currentTrType, itm, a });
+        db.logs.cash.push({ time: nowString(), ts: Date.now(), event: 'Üzlet', note: `${p} (${itm})`, val: diff, bal: db.balance });
+
+        document.getElementById('trPartner').value = '';
+        document.getElementById('trAmt').value = '';
+        save();
+    }
+
+    function setTrType(t) {
+        currentTrType = t;
+        document.getElementById('btnElad').className = t === 'eladas' ? 'active-elad' : '';
+        document.getElementById('btnVetel').className = t === 'vetel' ? 'active-vetel' : '';
+    }
+
+    function cashOp(type) {
+        if (!requireFullAdmin()) return;
+        const a = parseInt(document.getElementById('cashAmt')?.value, 10);
+        const note = document.getElementById('cashNote')?.value.trim() || type;
+        if (isNaN(a) || a <= 0) return customAlert("Érvénytelen összeg.");
+
+        const diff = type === 'BE' ? a : -a;
+        db.balance += diff;
+        db.logs.cash.push({ time: nowString(), ts: Date.now(), event: type, note, val: diff, bal: db.balance });
+        document.getElementById('cashAmt').value = '';
+        document.getElementById('cashNote').value = '';
+        save();
+    }
+
+    function addContact() {
+        const n = document.getElementById('phName')?.value.trim();
+        const s = document.getElementById('phNum')?.value.trim();
+        const f = document.getElementById('phFracSelect')?.value;
+        if (!n || !s) return customAlert("Hiányzó adat.");
+        db.contacts.push({ n, s, f });
+        document.getElementById('phName').value = '';
+        document.getElementById('phNum').value = '';
+        saveSections(['contacts']);
+    }
+
+    function addBL() {
+        const n = document.getElementById('blN')?.value.trim();
+        const i = document.getElementById('blI')?.value.trim();
+        if (!n) return;
+        db.blacklist.push({ n, i });
+        document.getElementById('blN').value = '';
+        document.getElementById('blI').value = '';
+        saveSections(['blacklist']);
+    }
+
+    function deleteBL(i) {
+        db.blacklist.splice(i, 1);
+        saveSections(['blacklist']);
+    }
+
+    function openMemberModal(idx = -1) {
+        if (!isFullAdmin()) return;
+        const m = idx > -1 ? db.members[idx] : {};
+        showModal(`
+            <h3>${idx > -1 ? 'Szerkesztés' : 'Új tag'}</h3>
+            <input id="mNick" placeholder="Becenév" value="${escapeAttr(m.nick || '')}">
+            <input id="mIC" placeholder="IC Név" value="${escapeAttr(m.ic || '')}">
+            <input id="mRank" placeholder="Rang" value="${escapeAttr(m.rank || '')}">
+            <input id="mDC" placeholder="Discord" value="${escapeAttr(m.dc || '')}">
+            <input id="mTel" placeholder="Telefon" value="${escapeAttr(m.tel || '')}">
+            <button class="btn-primary" onclick="confirmMember(${idx})">MENTÉS</button>
+        `);
+    }
+
+    function confirmMember(idx) {
+        const ic = document.getElementById('mIC')?.value.trim();
+        if (!ic) return customAlert("IC név kötelező.");
+        const data = {
+            ic,
+            nick: document.getElementById('mNick')?.value.trim(),
+            rank: document.getElementById('mRank')?.value.trim(),
+            dc: document.getElementById('mDC')?.value.trim(),
+            tel: document.getElementById('mTel')?.value.trim(),
+            pay: idx > -1 ? db.members[idx].pay : 0
+        };
+        if (idx > -1) db.members[idx] = data;
+        else db.members.push(data);
+        closeModal();
+        saveSections(['members']);
+    }
+
+    function deleteMember(idx) {
+        if (!requireFullAdmin()) return;
+        db.members.splice(idx, 1);
+        saveSections(['members']);
+    }
+
+    function renderInventory() {
+        const body = document.querySelector('#tabInventory tbody');
+        if (!body) return;
+        const search = (document.getElementById('inventorySearch')?.value || '').toLowerCase();
+        body.innerHTML = (db.inventory || []).filter(it => (it.name || '').toLowerCase().includes(search)).map((it, i) => `
+            <tr>
+                <td>${escapeHtml(it.name)}</td>
+                <td>${escapeHtml(it.category)}</td>
+                <td>${it.quantity} ${escapeHtml(it.unit)}</td>
+                <td>${escapeHtml(it.note || '-')}</td>
+                <td>${it.updatedAt ? new Date(it.updatedAt).toLocaleDateString() : '-'}</td>
+                <td><button onclick="changeInventoryQty(${i}, 1)">+</button><button onclick="changeInventoryQty(${i}, -1)">-</button></td>
+            </tr>
+        `).join('');
+    }
+
+    function changeInventoryQty(i, dir) {
+        if (!db.inventory[i]) return;
+        db.inventory[i].quantity = Math.max(0, (db.inventory[i].quantity || 0) + dir);
+        db.inventory[i].updatedAt = Date.now();
+        saveSections(['inventory', 'inventoryLog']);
+    }
+
+    function openInventoryModal() {
+        showModal(`
+            <h3>Új leltártétel</h3>
+            <input id="invName" placeholder="Tétel neve">
+            <input id="invCategory" placeholder="Kategória">
+            <input id="invQty" type="number" value="1">
+            <button class="btn-primary" onclick="confirmInventory()">Mentés</button>
+        `);
+    }
+
+    function confirmInventory() {
+        const name = document.getElementById('invName')?.value.trim();
+        const category = document.getElementById('invCategory')?.value.trim();
+        const quantity = parseInt(document.getElementById('invQty')?.value, 10);
+        if (!name || isNaN(quantity)) return;
+
+        db.inventory.push({ name, category, quantity, unit: 'db', updatedAt: Date.now() });
+        closeModal();
+        saveSections(['inventory', 'inventoryLog']);
+    }
+
+    function renderMentor() {
+        const list = document.getElementById('mentorList');
+        if (!list) return;
+        populateMentorSelects();
+        list.innerHTML = (db.mentorships || []).map((m, i) => `
+            <div class="mentor-card">
+                <strong>${escapeHtml(m.menteeName)}</strong> (Mentor: ${escapeHtml(m.mentorName)})
+                <p>${escapeHtml(m.note || 'Nincs jegyzet.')}</p>
+                <button class="btn-danger" onclick="deleteMentorship(${i})">Törlés</button>
+            </div>
+        `).join('');
+    }
+
+    function populateMentorSelects() {
+        const mentee = document.getElementById('mentorMentee');
+        const mentor = document.getElementById('mentorMentor');
+        if (!mentee || !mentor) return;
+        const opts = (db.members || []).map(m => `<option value="${escapeAttr(m.ic)}">${escapeHtml(m.ic)}</option>`).join('');
+        mentee.innerHTML = opts;
+        mentor.innerHTML = opts;
+    }
+
+    function saveMentorship() {
+        const menteeName = document.getElementById('mentorMentee')?.value;
+        const mentorName = document.getElementById('mentorMentor')?.value;
+        const note = document.getElementById('mentorNote')?.value.trim();
+        if (!menteeName || !mentorName || menteeName === mentorName) return customAlert("Válassz két különböző személyt.");
+
+        db.mentorships.push({ menteeName, mentorName, note, updatedAt: Date.now() });
+        saveSections(['mentorships']);
+    }
+
+    function deleteMentorship(i) {
+        db.mentorships.splice(i, 1);
+        saveSections(['mentorships']);
+    }
+
+    function renderController() {
+        const mList = document.getElementById('mafiaList');
+        if (mList) {
+            mList.innerHTML = (db.controller.mafias || []).map(m => `
+                <div class="controller-card">
+                    <h4>${escapeHtml(m.name)}</h4>
+                    ${(m.offers || []).map(o => `<div>${o.type === 'buy' ? 'VÉTEL' : 'ELADÁS'}: ${escapeHtml(o.item)} (${o.price} Cs)</div>`).join('')}
+                </div>
+            `).join('');
+        }
+        renderTerritoryPins();
+    }
+
+    function addMafiaOffer() {
+        const name = document.getElementById('mafiaName')?.value.trim();
+        const item = document.getElementById('mafiaItem')?.value.trim();
+        const price = Number(document.getElementById('mafiaPrice')?.value);
+        const type = document.getElementById('mafiaOfferType')?.value;
+        if (!name || !item || isNaN(price)) return;
+
+        let m = db.controller.mafias.find(x => x.name === name);
+        if (!m) { m = { name, offers: [] }; db.controller.mafias.push(m); }
+        m.offers.push({ item, price, type });
+        saveSections(['controller']);
+    }
+
+    function setTerritoryPoint(e) {
+        const wrap = document.getElementById('gtaTerritoryMap');
+        if (!wrap) return;
+        const r = wrap.getBoundingClientRect();
+        const x = ((e.clientX - r.left) / r.width) * 100;
+        const y = ((e.clientY - r.top) / r.height) * 100;
+        pendingTerritoryPoint = { x: Number(x.toFixed(2)), y: Number(y.toFixed(2)) };
+        renderTerritoryPins();
+    }
+
+    function renderTerritoryPins() {
+        const pEl = document.getElementById('territoryPins');
+        if (!pEl) return;
+        let html = (db.controller.territories || []).map(t => t.point ? `<div class="map-pin saved" style="left:${t.point.x}%; top:${t.point.y}%"></div>` : '').join('');
+        if (pendingTerritoryPoint) html += `<div class="map-pin" style="left:${pendingTerritoryPoint.x}%; top:${pendingTerritoryPoint.y}%"></div>`;
+        pEl.innerHTML = html;
+    }
+
+    function addTerritoryOffer() {
+        const name = document.getElementById('territoryName')?.value.trim();
+        const item = document.getElementById('territoryItem')?.value.trim();
+        const price = Number(document.getElementById('territoryPrice')?.value);
+        if (!name || !item || isNaN(price)) return;
+
+        let t = db.controller.territories.find(x => x.name === name);
+        if (!t) {
+            t = { name, point: pendingTerritoryPoint, offers: [] };
+            db.controller.territories.push(t);
+        }
+        t.offers.push({ item, price, type: document.getElementById('territoryOfferType')?.value });
+        saveSections(['controller']);
+    }
+
+    function clearTerritoryForm() {
+        pendingTerritoryPoint = null;
+        renderTerritoryPins();
+    }
+
+    function saveEquipmentEntry() {
+        const name = document.getElementById('equipmentName')?.value.trim();
+        const items = document.getElementById('equipmentItems')?.value.trim();
+        if (!name || !items) return;
+        db.controller.equipment.push({ name, items, type: document.getElementById('equipmentType')?.value });
+        saveSections(['controller']);
+    }
+
+    function showLoginModal() {
+        showModal(`
+            <h2>Syndicate Access</h2>
+            <input id="lU" placeholder="Email cím">
+            <input id="lP" type="password" placeholder="Jelszó">
+            <button class="btn-primary" style="width:100%" onclick="login()">Login</button>
+        `);
+    }
+
+    window.login = function () {
+        const email = document.getElementById('lU')?.value.trim();
+        const pass = document.getElementById('lP')?.value;
+        auth.signInWithEmailAndPassword(email, pass).then(() => closeModal()).catch(() => customAlert("Hibás belépés!"));
+    };
+
+    window.logout = function () {
+        auth.signOut().then(() => location.reload());
+    };
+
+    window.onload = () => {
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                currentUserEmail = user.email || '';
+                currentUserRole = getRoleByEmail(currentUserEmail);
+                document.getElementById('siteHeader').style.display = 'flex';
+                document.getElementById('mainWrapper').style.display = 'block';
+                setupRealtimeSync();
+                showTab('főoldal');
+            } else {
+                showLoginModal();
+            }
+        });
+    };
+</script>
+</body>
+</html>
