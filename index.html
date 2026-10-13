@@ -581,27 +581,6 @@
         .mentor-task-editor textarea { min-height:120px; resize:vertical; line-height:1.5; }
         .mentor-task-description { margin:10px 0; padding:12px; background:#090909; border-left:3px solid var(--primary-blue); border-radius:6px; color:#ddd; line-height:1.5; }
 
-        /* INTRO */
-        .heist-intro {
-            position: fixed;
-            inset: 0;
-            z-index: 999999;
-            display: grid;
-            place-items: center;
-            overflow: hidden;
-            color: #eaf8ff;
-            background: radial-gradient(circle at 50% 45%, rgba(0, 126, 255, .15), transparent 28rem), #020408;
-            font-family: "Rajdhani", "Segoe UI", sans-serif;
-            opacity: 1;
-            transition: opacity .65s ease, visibility .65s ease;
-        }
-
-        .heist-intro.is-closing { opacity: 0; visibility: hidden; }
-
-        .heist-core { position: relative; z-index: 4; width: min(560px, calc(100vw - 34px)); text-align: center; }
-        .heist-title { color: #fff; font-size: clamp(37px, 8vw, 72px); font-weight: 800; letter-spacing: -.045em; line-height: .95; text-shadow: 0 0 28px rgba(37, 154, 255, .42); }
-        .heist-skip { position: absolute; right: 18px; bottom: 18px; z-index: 8; padding: 9px 13px; border: 1px solid rgba(255,255,255,.14); border-radius: 8px; background: rgba(255,255,255,.04); color: #71889a; font: 700 10px monospace; cursor: pointer; }
-
         /* EGYEDI DROPDOWN */
         .bs-select-wrap { position:relative; width:100%; margin-bottom:10px; }
         .bs-select-wrap > select { position:absolute !important; inset:0 !important; width:100% !important; height:100% !important; opacity:0 !important; pointer-events:none !important; margin:0 !important; }
@@ -625,14 +604,7 @@
     </style>
 </head>
 <body>
-
-<div id="heistIntro" class="heist-intro" role="dialog" aria-label="Blue Syndicate rendszerindítás">
-    <div class="heist-core">
-        <div class="heist-title">BLUE SYNDICATE</div>
-        <p class="muted">HEIST CONTROL // SECURE NETWORK</p>
-    </div>
-    <button class="heist-skip" type="button" onclick="closeHeistIntro()">ÁTUGRÁS [ESC]</button>
-</div>
+    
 
 <div id="modalOverlay" class="modal-overlay">
     <div id="modalBody" class="modal-content"></div>
@@ -1087,16 +1059,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
 
 <script>
-    function closeHeistIntro() {
-        const intro = document.getElementById('heistIntro');
-        if (!intro) return;
-        intro.classList.add('is-closing');
-        setTimeout(() => intro.remove(), 700);
-    }
-
-    document.addEventListener('keydown', event => {
-        if (event.key === 'Escape') closeHeistIntro();
-    });
 
     const LEADERSHIP_MENU = ["dashboard", "taglista", "könyvelés", "üzletek", "árak", "pénzmozgás", "telefonkönyv", "leltár", "fekete-lista", "admin-panel"];
     const CONTROL_MENU = ["iranyito-maffia", "iranyito-terulet", "iranyito-felszereles"];
