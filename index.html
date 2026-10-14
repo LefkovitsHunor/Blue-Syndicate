@@ -38,7 +38,7 @@
 
 
 
-        * { box-sizing: border-box; transition: all 0.2s ease; }
+        * { box-sizing: border-box; }
 
 
 
@@ -188,7 +188,7 @@
 
             letter-spacing: 1.5px;
 
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background-color .2s ease, border-color .2s ease, color .2s ease, box-shadow .2s ease, transform .2s ease;
 
             position: relative;
 
@@ -380,7 +380,7 @@
 
             outline: none;
 
-            transition: all 0.3s ease;
+            transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
 
         }
 
@@ -672,7 +672,7 @@
 
             background: var(--primary-blue);
 
-            transition: all 0.3s ease;
+            transition: background-color .2s ease, border-color .2s ease, box-shadow .2s ease;
 
             box-shadow: 0 0 8px var(--primary-blue);
 
@@ -5307,7 +5307,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                 clean._updatedAt = Date.now();
 
-                transaction.set(DB_DOC, clean, { merge: false });
+                transaction.update(DB_DOC, clean);
 
                 localRevision = nextRevision;
 
@@ -5392,7 +5392,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                 clean._updatedAt = Date.now();
 
-                transaction.set(DB_DOC, clean, { merge: false });
+                transaction.update(DB_DOC, clean);
 
                 localRevision = nextRevision;
 
@@ -5445,7 +5445,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                 clean._updatedAt = Date.now();
 
-                transaction.set(DB_DOC, clean, { merge: false });
+                transaction.update(DB_DOC, clean);
 
                 localRevision = nextRevision;
 
@@ -6018,6 +6018,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
 
 
+    let syncConflictDetected = false;
     async function flushPendingChanges() {
 
         if (saveInProgress || pendingTopLevelChanges.size === 0) return true;
@@ -6047,10 +6048,16 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
 
 
+                    // Másik kliens ugyanazon adatcsoportban végzett változását
+                    // soha ne írjuk felül észrevétlenül.
+                    const conflictingKeys = [...batch.keys()].filter(key =>
+                        JSON.stringify(remoteRaw[key]) !== JSON.stringify(lastSyncedDb?.[key])
+                    );
+                    if (conflictingKeys.length) {
+                        throw new Error('SYNC_CONFLICT: ' + conflictingKeys.join(', '));
+                    }
                     batch.forEach((value, key) => {
-
                         remote[key] = cloneValue(value);
-
                     });
 
 
@@ -6063,7 +6070,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                     remote._updatedAt = Date.now();
 
-                    transaction.set(DB_DOC, remote, { merge: false });
+                    transaction.update(DB_DOC, remote);
 
                     return { remote, nextRevision };
 
@@ -6095,7 +6102,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
                 writeLocalRecoveryCopy(db);
 
-                render();
+                renderWhenIdle();
 
 
 
@@ -6114,7 +6121,7 @@ h1.logo-graffiti[style*="font-size:100px"] {
         } catch (err) {
 
             console.error("MENTÉSI HIBA:", err);
-
+            syncConflictDetected = String(err?.message || '').startsWith('SYNC_CONFLICT:');
             writeLocalRecoveryCopy(db);
 
             const now = Date.now();
@@ -6133,10 +6140,8 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
             saveInProgress = false;
 
-            if (pendingTopLevelChanges.size > 0) {
-
+            if (pendingTopLevelChanges.size > 0 && !syncConflictDetected) {
                 setTimeout(() => flushPendingChanges(), 5000);
-
             }
 
         }
@@ -6155,11 +6160,31 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
 
 
+    // Ne építsük újra az éppen szerkesztett űrlapot élő szinkron közben.
+    let deferredViewRender = false;
+    function isEditingField() {
+        const el = document.activeElement;
+        return !!(el && el.matches && el.matches('input:not([type="button"]):not([type="submit"]), textarea, select, [contenteditable="true"]'));
+    }
+    function renderWhenIdle() {
+        if (isEditingField()) {
+            deferredViewRender = true;
+            return;
+        }
+        deferredViewRender = false;
+        render();
+    }
+    document.addEventListener('focusout', () => {
+        if (!deferredViewRender) return;
+        setTimeout(() => { if (deferredViewRender && !isEditingField()) renderWhenIdle(); }, 0);
+    });
+
     function renderActiveView(forceFull = false) {
 
         const id = getActiveTabId();
 
         try {
+            if (isEditingField()) { deferredViewRender = true; return; }
 
             // A teljes render csak akkor fusson, amikor tényleg szükséges.
 
@@ -6237,6 +6262,10 @@ h1.logo-graffiti[style*="font-size:100px"] {
 
 
 
+        if (syncConflictDetected) {
+            customAlert('Mentési ütközés történt. A helyi módosítás megmaradt. Frissítés előtt készíts biztonsági másolatot, és egyeztesd a párhuzamos módosításokat.');
+            return Promise.resolve(false);
+        }
         saveQueue = saveQueue.catch(() => false).then(() => flushPendingChanges());
 
 
@@ -7301,7 +7330,7 @@ function flashBalanceDirection(isUp) {
 
     function render() {
 
-        console.log("RENDER DB =", JSON.parse(JSON.stringify(db)));
+        // Teljes adatbázis konzolra másolása minden rendernél lassú és adatvédelmi kockázat.
 
         const currentBalance = Number(db.balance || 0);
 
@@ -8160,6 +8189,7 @@ function flashBalanceDirection(isUp) {
                 isSyncReady = false;
                 const localBackup = readLocalRecoveryCopy();
                 db = localBackup || getDefaultDb();
+                console.warn('Csak helyi helyreállítási nézet: ez NEM a felhő aktuális állapota.');
                 // Do not initialize Firestore from empty defaults or local cache.
                 // An administrator must explicitly investigate and restore the missing document.
                 pendingTopLevelChanges.clear();
@@ -8174,7 +8204,7 @@ function flashBalanceDirection(isUp) {
 
             autoCleanup();
 
-            render();
+            renderWhenIdle();
 
             if (pendingTopLevelChanges.size > 0 && !saveInProgress) {
 
@@ -11160,7 +11190,7 @@ function flashBalanceDirection(isUp) {
 
         const observer = new MutationObserver(() => refresh(entry));
 
-        observer.observe(select,{childList:true,subtree:true,attributes:true,characterData:true});
+        observer.observe(select,{childList:true,subtree:true,characterData:true});
 
         refresh(entry);
 
